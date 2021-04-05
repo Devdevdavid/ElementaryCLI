@@ -38,11 +38,11 @@ ElementaryCLI allows you to link a callback function to a defined command. When 
 Tokens are organized as a tree. A parent can have several childrens. If a token has no children, it is concidered as a leaf. Here is an exemple:
 
 ```
-. 				// root
- \ show_config	// leaf
- \ set_config 	// parent
-    \ ip		// leaf
-    \ gateway	// leaf
+.               // root
+ \ show_config  // leaf
+ \ set_config   // parent
+    \ ip        // leaf
+    \ gateway   // leaf
 ```
 
 > There is always a `root` token initiated by the library. It should be the only token without parent.
@@ -53,8 +53,8 @@ A leaf can live without any argument (Ex: `show_config`). But some commands requ
 
 There is 2 types of arguments:
 
-	- Madatory (Noted `<arg>`)
- 	- Optional (Noted `[arg]`) (No yet supported)
+    - Madatory (Noted `<arg>`)
+    - Optional (Noted `[arg]`) (No yet supported)
 
 Arguments are passed to callback as an array of `char *`. ElementaryCLI does not manage argument type (integer, boolean, strings, ...). It is up to the callback to parse the data.
 
@@ -71,7 +71,7 @@ Callbacks are defined by user. They are the interface between the commands and t
 There prototype must match this one :
 
 ```
-int callback(int argc, char * argv[]); 		// see cli_callback_t
+int callback(int argc, char * argv[]);      // see cli_callback_t
 ```
 
 The returned value tells if the command was successfull.
@@ -91,18 +91,18 @@ cli_init();
 // 1st is the token text, 2nd is the description
 tokLan = cli_add_token("lan", "LAN configuration");
 {
-	curTok = cli_add_token("show_config", "Show configuration");
-	cli_set_callback(curTok, &show_config_callback);
-	cli_add_children(tokLan, curTok);
+    curTok = cli_add_token("show_config", "Show configuration");
+    cli_set_callback(curTok, &show_config_callback);
+    cli_add_children(tokLan, curTok);
 
-	tokIpSet = cli_add_token("set_config", "Define new configuration");
-	{
-		curTok = cli_add_token("ip", "<address> Set IP adress");
-		cli_set_callback(curTok, &set_ip_adress_callback);
-		cli_set_argc(curTok, 1);
-		cli_add_children(tokIpSet, curTok);
-	}
-	cli_add_children(tokLan, tokIpSet);
+    tokIpSet = cli_add_token("set_config", "Define new configuration");
+    {
+        curTok = cli_add_token("ip", "<address> Set IP adress");
+        cli_set_callback(curTok, &set_ip_adress_callback);
+        cli_set_argc(curTok, 1);
+        cli_add_children(tokIpSet, curTok);
+    }
+    cli_add_children(tokLan, tokIpSet);
 }
 cli_add_children(cli_get_root_token(), tokLan);
 ```
@@ -110,8 +110,8 @@ cli_add_children(cli_get_root_token(), tokLan);
 This code gives the following tree:
 
 ```
-. 				
- \ show_config	// Call show_config_callback()
- \ set_config 	
-    \ ip		// Call set_ip_adress_callback(1, <address>)
+.               
+ \ show_config  // Call show_config_callback()
+ \ set_config   
+    \ ip        // Call set_ip_adress_callback(1, <address>)
 ```
