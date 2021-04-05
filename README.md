@@ -70,7 +70,7 @@ Exemple: Set verbosity with `-vvv`
 Callbacks are defined by user. They are the interface between the commands and the user code function to call.
 There prototype must match this one :
 
-```
+```C
 int callback(int argc, char * argv[]);      // see cli_callback_t
 ```
 

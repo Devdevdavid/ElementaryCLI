@@ -69,6 +69,10 @@ static void cli_print_token(cli_token * curTok)
 	printf("\t%s\t%s\n\r", curTok->text, curTok->desc);
 }
 
+// ===================
+//      STATIC
+// ===================
+
 /**
  * @brief Give the usage for a specified token
  *
@@ -159,12 +163,12 @@ static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_tok
 }
 
 // ===================
-//      CLI EXTERN
+//       EXTERN
 // ===================
 
 /**
  * @brief Safely copy src into dest with a max length and
- * set the ending string caracter
+ * set the ending string character
  * @details [long description]
  *
  * @param dest Pointer
@@ -496,7 +500,7 @@ int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 			*pCmd = '\0';
 			++pCmd;
 
-			// A new cmdText begins only if next caracter is not a space
+			// A new cmdText begins only if next character is not a space
 			// This allow user to put multiple spaces between cmdText
 			if ((*pCmd) != ' ') {
 				++cmdTextCount;
