@@ -1,0 +1,93 @@
+# Basic .clang-format
+---
+
+# Guide : https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+# --- CHANGELOG ---
+# Rev B (18/08/2020) : Add pointers
+# Rev A (01/06/2020) : First revision
+
+# Others
+AccessModifierOffset: 0
+AlignEscapedNewlinesLeft: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations: false
+BinPackParameters: false
+BreakBeforeBinaryOperators: false
+BreakBeforeTernaryOperators: false
+BreakConstructorInitializersBeforeComma: false
+CommentPragmas: ''
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerIndentWidth: 0
+ContinuationIndentWidth: 0
+Cpp11BracedListStyle: false
+DerivePointerBinding: false
+IndentFunctionDeclarationAfterType: false
+NamespaceIndentation: None
+ObjCSpaceAfterProperty: true
+ObjCSpaceBeforeProtocolList: true
+PenaltyBreakBeforeFirstCallParameter: 100
+PenaltyBreakComment: 100
+PenaltyBreakFirstLessLess: 0
+PenaltyBreakString: 100
+PenaltyExcessCharacter: 1
+PenaltyReturnTypeOnItsOwnLine: 20
+
+# Defines
+AlignConsecutiveMacros: true
+AlignEscapedNewlines: Left
+
+# Code
+Language: Cpp
+Standard: Cpp11
+ColumnLimit: 0
+MaxEmptyLinesToKeep: 1
+SpacesInParentheses: false
+SpaceAfterCStyleCast: true
+AllowShortBlocksOnASingleLine: false
+
+# Braces
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace : false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: false
+  SplitEmptyFunction: false
+
+# Function
+AllowShortFunctionsOnASingleLine: false
+
+# Indent
+IndentWidth: 4
+TabWidth : 4
+UseTab: ForContinuationAndIndentation
+
+# IF
+AllowShortIfStatementsOnASingleLine: Never
+SpacesInConditionalStatement: false
+
+# Goto Labels
+IndentGotoLabels: false
+
+# Case
+IndentCaseLabels: false
+
+# PPDirective
+IndentPPDirectives: None
+
+# Pointer
+PointerAlignment: Middle

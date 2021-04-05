@@ -1,3 +1,8 @@
+# Specific
+build/
+*.DS_Store
+Makefile
+
 # Prerequisites
 *.d
 
