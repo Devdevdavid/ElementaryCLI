@@ -1,4 +1,33 @@
+#include <ncurses.h>
+#include <signal.h>
+#include <unistd.h>
+
 #include "cli.h"
+#include "lineBuffer.h"
+
+// Tell if main loop should keep running
+static volatile int keepRunning = 1;
+
+/**
+ * @brief Handler to stop app on ctrl-c
+ *
+ * @param dummy unused
+ */
+void sigint_handler(int dummy)
+{
+	keepRunning = 0;
+	printf("\n\r- Quitting...\n\r");
+}
+
+// ================
+// CMD CALLBACKS
+// ================
+
+int cli_cb_exit(int argc, char * argv[])
+{
+	sigint_handler(SIGINT);
+	return 0;
+}
 
 /**
  * @brief Default callback for leaf tokens
@@ -20,7 +49,7 @@ int print_args(int argc, char * argv[])
 /**
  * @brief Create the command line interface
  */
-static int create_cli(void)
+static int create_cli_commands(void)
 {
 	cli_token * tokRoot = cli_get_root_token();
 	cli_token * tokLan;
@@ -28,7 +57,10 @@ static int create_cli(void)
 	cli_token * curTok;
 
 	// Create commands
-	cli_init();
+	curTok = cli_add_token("exit", "Exit application");
+	cli_set_callback(curTok, &cli_cb_exit);
+	cli_add_children(tokRoot, curTok);
+
 	tokLan = cli_add_token("lan", "LAN configuration");
 	{
 		curTok = cli_add_token("show", "Show configuration");
@@ -64,36 +96,37 @@ static int create_cli(void)
 	return 0;
 }
 
-/**
- * @brief Exemple for ElementaryCLI
- *
- * @return 0
- */
-int main(int argc, char const * argv[])
+int main(void)
 {
-	char   cmdEdit[CLI_CMD_MAX_LEN];
-	char * cmdText[CLI_CMD_MAX_TOKEN];
-	int    cmdTextCount;
+	uint8_t byte;
 
+	// Init signal handler
+	signal(SIGINT, sigint_handler);
+
+	// Init ncurses stuff
+	initscr();
+	endwin();
+	noecho();
+	setvbuf(stdout, NULL, _IONBF, 0);
+	setvbuf(stderr, NULL, _IONBF, 0);
+	timeout(100);
+
+	// Using getch now allows us to see firsts printf()
+	getch();
+
+	// motd
 	printf("Exemple using %s\n\r", cli_get_version());
 
-	create_cli();
+	cli_init();
+	create_cli_commands();
 
-	// Copy incomming buffer
-	cli_strcpy_safe(cmdEdit, argv[1], CLI_CMD_MAX_LEN);
-
-	// PARSER
-	cmdTextCount = cli_parse_cmd_text(cmdEdit, cmdText);
-	if (cmdTextCount <= 0) {
-		printf("Parse error!\n\r");
-		return -1;
+	while (keepRunning) {
+		byte = getch();
+		if (byte == 0xFF) {
+			continue;
+		}
+		cli_rx(byte);
 	}
 
-	// Search for alternatives
-	char * pText = cli_auto_complete(cmdText, cmdTextCount);
-	if (pText != NULL) {
-		printf("Alternative: %s\n\r", pText);
-	}
-
-	return cli_execute_command(cmdText, cmdTextCount);
+	return 0;
 }

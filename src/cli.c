@@ -345,11 +345,15 @@ cli_token * cli_get_root_token(void)
 int cli_init(void)
 {
 	DEBUG_ENABLE(ERROR);
-	DEBUG_ENABLE(PARSER);
-	DEBUG_ENABLE(FINDER);
+	//DEBUG_ENABLE(PARSER);
+	//DEBUG_ENABLE(FINDER);
 
 	// Add root children
 	cli_add_token(CLI_ROOT_TOKEN_NAME, "");
+
+	// Init LineBuffer
+	lb_init();
+	lb_set_valid_line_callback(&cli_input_command);
 	return 0;
 }
 
@@ -462,6 +466,10 @@ char * cli_auto_complete(char * cmdText[], int cmdTextCount)
 	return NULL;
 }
 
+/**
+ * @brief Give a string containing the version of CLI
+ * @return String pointer
+ */
 const char * cli_get_version(void)
 {
 	return cliVersionName;
@@ -508,7 +516,7 @@ int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 
 				// Check maximum
 				if (cmdTextCount >= CLI_CMD_MAX_TOKEN) {
-					DPRINTF(ERROR, "Limit is reached (CLI_CMD_MAX_TOKEN)\n\r");
+					DPRINTF(ERROR, "Limit is reached (CLI_CMD_MAX_TOKEN = %d)\n\r", CLI_CMD_MAX_TOKEN);
 					return -1;
 				}
 			}
@@ -517,11 +525,56 @@ int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 		}
 	}
 
-	DEBUG(PARSER)
+	DEBUG_BLOC(PARSER)
 	{
 		cli_print_cmd_text(cmdText, cmdTextCount);
 		DPRINTF(PARSER, "- Leaving\n\r");
 	}
 
 	return cmdTextCount;
+}
+
+/**
+ * @brief Callback function for LineBuffer
+ * @details The definition of this function must follow
+ * the one defined in LineBuffer
+ * @see lb_line_callback_t
+ *
+ * @param str The input command string
+ * @param len The length of the str
+ *
+ * @return The result of the command
+ */
+int cli_input_command(const char * str, int len)
+{
+	char   cmdEdit[CLI_CMD_MAX_LEN]; // Editable copy of str
+	char * cmdText[CLI_CMD_MAX_TOKEN];
+	int    cmdTextCount;
+
+	// Copy incomming buffer
+	cli_strcpy_safe(cmdEdit, str, CLI_CMD_MAX_LEN);
+
+	// PARSER
+	cmdTextCount = cli_parse_cmd_text(cmdEdit, cmdText);
+	if (cmdTextCount <= 0) {
+		return 0;
+	}
+
+	// Search for alternatives
+	// char * pText = cli_auto_complete(cmdText, cmdTextCount);
+	// if (pText != NULL) {
+	// 	printf("Alternative: %s\n\r", pText);
+	// }
+
+	return cli_execute_command(cmdText, cmdTextCount);
+}
+
+/**
+ * @brief Input of caracter to manage by cli
+ *
+ * @param byte The value of the caracter
+ */
+void cli_rx(uint8_t byte)
+{
+	lb_rx(byte);
 }

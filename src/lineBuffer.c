@@ -7,13 +7,14 @@
 typedef struct {
 	char lineBufferTable[LB_HISTORY_COUNT][LB_LINE_BUFFER_LENGTH]; /**< Buffer to store the state of the line */
 
-	int     historyIndex;   /**< The current lineBuffer index under edition, history will be saved here after processing */
-	int     explorerIndex;  /**< Index controlled by user when explorating history */
-	char *  curLineBuffer;  /**< The line currently under edition by user */
-	uint8_t lineSize;       /**< Size of the line (without ending '\0') */
-	char *  pCurPos;        /**< Current position of the cursor */
-	uint8_t isEscaping : 1; /**< Tell if next bytes will be managed as escaped command */
-	uint8_t escPos;         /**< Current position in the escBuffer */
+	int                historyIndex;   /**< The current lineBuffer index under edition, history will be saved here after processing */
+	int                explorerIndex;  /**< Index controlled by user when explorating history */
+	char *             curLineBuffer;  /**< The line currently under edition by user */
+	uint8_t            lineSize;       /**< Size of the line (without ending '\0') */
+	char *             pCurPos;        /**< Current position of the cursor */
+	uint8_t            isEscaping : 1; /**< Tell if next bytes will be managed as escaped command */
+	uint8_t            escPos;         /**< Current position in the escBuffer */
+	lb_line_callback_t lineCallback;   /**< Function called when user valid a line */
 } lb_handle_t;
 lb_handle_t lbHandle;
 
@@ -287,6 +288,7 @@ void lb_init(void)
 	lbHandle.curLineBuffer = lbHandle.lineBufferTable[0];
 	lbHandle.pCurPos       = lbHandle.curLineBuffer;
 
+	// Display prompt on init
 	lb_term_update();
 }
 
@@ -299,6 +301,11 @@ void lb_process_line(void)
 	// and move to n+1 to display command's results
 	printf("\n\r");
 
+	// Execute the command
+	if (lbHandle.lineCallback != NULL) {
+		lbHandle.lineCallback(lbHandle.curLineBuffer, lbHandle.lineSize);
+	}
+
 	// Save the command into history
 	lb_save_to_history();
 }
@@ -307,9 +314,8 @@ void lb_process_line(void)
  * @brief Receive incomming byte from user
  *
  * @param byte Incomming byte
- * @return 0
  */
-int lb_rx(uint8_t byte)
+void lb_rx(uint8_t byte)
 {
 	// DPRINTF(INFO, "rx: %c (0x%02X)\n\r", byte, byte);
 	if (lbHandle.isEscaping) {
@@ -326,5 +332,14 @@ int lb_rx(uint8_t byte)
 		lb_insert_at_cursor((char) byte);
 	}
 	lb_term_update();
-	return 0;
+}
+
+/**
+ * @brief Define the function callback to call when user hit enter
+ *
+ * @param callback Pointer on function, can be NULL to remove callback
+ */
+void lb_set_valid_line_callback(lb_line_callback_t callback)
+{
+	lbHandle.lineCallback = callback;
 }

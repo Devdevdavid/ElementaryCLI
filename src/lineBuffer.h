@@ -32,12 +32,15 @@
 // Typedefs and structs
 // ======================
 
+typedef int (*lb_line_callback_t)(const char * str, int len);
+
 // ======================
 // Protoypes
 // ======================
 
 int  lb_get_cursor_pos(void);
 void lb_init(void);
-int  lb_rx(uint8_t byte);
+void lb_rx(uint8_t byte);
+void lb_set_valid_line_callback(lb_line_callback_t callback);
 
 #endif /* LINE_BUFFER_H */

@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "lineBuffer.h"
+
 // ======================
 // Constants
 // ======================
@@ -22,7 +24,7 @@
 #define CLI_MAX_DESC_LEN    32
 #define CLI_MAX_TOKEN_COUNT 10
 #define CLI_CMD_MAX_TOKEN   5
-#define CLI_CMD_MAX_LEN     100
+#define CLI_CMD_MAX_LEN     LB_LINE_BUFFER_LENGTH
 #define CLI_ROOT_TOKEN_NAME "."
 
 // ======================
@@ -58,5 +60,7 @@ int          cli_execute_command(char * cmdText[], int cmdTextCount);
 char *       cli_auto_complete(char * cmdText[], int cmdTextCount);
 const char * cli_get_version(void);
 int          cli_parse_cmd_text(char * cmdEdit, char * cmdText[]);
+int          cli_input_command(const char * str, int len);
+void         cli_rx(uint8_t byte);
 
 #endif /* CLI_H */

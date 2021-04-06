@@ -4,8 +4,14 @@
 
 #include "lineBuffer.h"
 
+// Tell if main loop should keep running
 static volatile int keepRunning = 1;
 
+/**
+ * @brief Handler to stop app on ctrl-c
+ *
+ * @param dummy unused
+ */
 void sigint_handler(int dummy)
 {
 	keepRunning = 0;
@@ -16,12 +22,16 @@ int main(void)
 {
 	uint8_t byte;
 
+	// Init ncurses stuff
 	initscr();
 	endwin();
 	noecho();
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
 	timeout(100);
+
+	// Using getch now allows us to see firsts printf()
+	getch();
 
 	printf(" - Starting...\n\r");
 	signal(SIGINT, sigint_handler);
