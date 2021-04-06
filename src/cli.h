@@ -60,6 +60,7 @@ int          cli_execute_command(char * cmdText[], int cmdTextCount);
 char *       cli_auto_complete(char * cmdText[], int cmdTextCount);
 const char * cli_get_version(void);
 int          cli_parse_cmd_text(char * cmdEdit, char * cmdText[]);
+int          cli_autocomplete_command(const char * str, int len, char * outBuffer, int outBufferMaxLen);
 int          cli_input_command(const char * str, int len);
 void         cli_rx(uint8_t byte);
 

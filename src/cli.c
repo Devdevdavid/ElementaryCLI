@@ -354,6 +354,7 @@ int cli_init(void)
 	// Init LineBuffer
 	lb_init();
 	lb_set_valid_line_callback(&cli_input_command);
+	lb_set_autocomplete_callback(&cli_autocomplete_command);
 	return 0;
 }
 
@@ -458,7 +459,8 @@ char * cli_auto_complete(char * cmdText[], int cmdTextCount)
 			} else if (alternatives == 1) {
 				return lastAlternativeTok->text;
 			} else {
-				continue; // Will print alternatives
+				printf("\n\r"); // Go to next line before printing alternatives
+				continue;
 			}
 		}
 	}
@@ -538,6 +540,53 @@ int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
  * @brief Callback function for LineBuffer
  * @details The definition of this function must follow
  * the one defined in LineBuffer
+ * @see lb_autocomplete_callback_t
+ *
+ * @param str The input command string
+ * @param len The length of the str
+ * @param outBuffer The buffer where we write the completion
+ *
+ * @return The result of the command
+ */
+int cli_autocomplete_command(const char * str, int len, char * outBuffer, int outBufferMaxLen)
+{
+	char   cmdEdit[CLI_CMD_MAX_LEN]; // Editable copy of str
+	char * cmdText[CLI_CMD_MAX_TOKEN];
+	int    cmdTextCount;
+	int    countToAdd, countAlreadyWrote;
+
+	// Copy incomming buffer
+	cli_strcpy_safe(cmdEdit, str, CLI_CMD_MAX_LEN);
+
+	// PARSER
+	cmdTextCount = cli_parse_cmd_text(cmdEdit, cmdText);
+	if (cmdTextCount <= 0) {
+		return 0;
+	}
+
+	// Search for alternatives
+	char * pText = cli_auto_complete(cmdText, cmdTextCount);
+	if (pText == NULL) {
+		return 0; // Nothing added
+	}
+
+	countAlreadyWrote = strlen(cmdText[cmdTextCount - 1]);
+	countToAdd        = strlen(pText) - countAlreadyWrote;
+
+	// Check overflow
+	if (countToAdd > outBufferMaxLen) {
+		// Not enough space to autocomplete, do nothing
+		return 0;
+	}
+
+	cli_strcpy_safe(outBuffer, pText + countAlreadyWrote, outBufferMaxLen);
+	return countToAdd;
+}
+
+/**
+ * @brief Callback function for LineBuffer
+ * @details The definition of this function must follow
+ * the one defined in LineBuffer
  * @see lb_line_callback_t
  *
  * @param str The input command string
@@ -559,12 +608,6 @@ int cli_input_command(const char * str, int len)
 	if (cmdTextCount <= 0) {
 		return 0;
 	}
-
-	// Search for alternatives
-	// char * pText = cli_auto_complete(cmdText, cmdTextCount);
-	// if (pText != NULL) {
-	// 	printf("Alternative: %s\n\r", pText);
-	// }
 
 	return cli_execute_command(cmdText, cmdTextCount);
 }

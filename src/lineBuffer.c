@@ -7,14 +7,16 @@
 typedef struct {
 	char lineBufferTable[LB_HISTORY_COUNT][LB_LINE_BUFFER_LENGTH]; /**< Buffer to store the state of the line */
 
-	int                historyIndex;   /**< The current lineBuffer index under edition, history will be saved here after processing */
-	int                explorerIndex;  /**< Index controlled by user when explorating history */
-	char *             curLineBuffer;  /**< The line currently under edition by user */
-	uint8_t            lineSize;       /**< Size of the line (without ending '\0') */
-	char *             pCurPos;        /**< Current position of the cursor */
-	uint8_t            isEscaping : 1; /**< Tell if next bytes will be managed as escaped command */
-	uint8_t            escPos;         /**< Current position in the escBuffer */
-	lb_line_callback_t lineCallback;   /**< Function called when user valid a line */
+	int     historyIndex;   /**< The current lineBuffer index under edition, history will be saved here after processing */
+	int     explorerIndex;  /**< Index controlled by user when explorating history */
+	char *  curLineBuffer;  /**< The line currently under edition by user */
+	uint8_t lineSize;       /**< Size of the line (without ending '\0') */
+	char *  pCurPos;        /**< Current position of the cursor */
+	uint8_t isEscaping : 1; /**< Tell if next bytes will be managed as escaped command */
+	uint8_t escPos;         /**< Current position in the escBuffer */
+
+	lb_line_callback_t         lineCallback;     /**< Function called when user valid a line */
+	lb_autocomplete_callback_t autoCompCallback; /**< Function called when user request an autocompletion */
 } lb_handle_t;
 lb_handle_t lbHandle;
 
@@ -293,6 +295,39 @@ void lb_init(void)
 }
 
 /**
+ * @brief Look for an auto completion by calling the
+ * specified callback
+ */
+void lb_auto_complete(void)
+{
+	int    remainLen, count;
+	char * appendBuffer;
+
+	if (lbHandle.autoCompCallback == NULL) {
+		return;
+	}
+
+	// Prevent autocompletion if cursor is not at the end of the line
+	if (lb_get_cursor_pos() != lbHandle.lineSize) {
+		return;
+	}
+
+	// Do autocompletion
+	appendBuffer = lbHandle.pCurPos;
+	remainLen    = LB_LINE_BUFFER_LENGTH - lbHandle.lineSize;
+	count        = lbHandle.autoCompCallback(lbHandle.curLineBuffer, lbHandle.lineSize, appendBuffer, remainLen);
+
+	// Update position and counters if valid
+	if ((count > 0) && (count <= remainLen)) {
+		lbHandle.lineSize += count;
+		lbHandle.pCurPos += count;
+
+		// End the line to be sure
+		(*lbHandle.pCurPos) = '\0';
+	}
+}
+
+/**
  * @brief Process the lineBuffer once validated by user
  */
 void lb_process_line(void)
@@ -317,11 +352,13 @@ void lb_process_line(void)
  */
 void lb_rx(uint8_t byte)
 {
-	// DPRINTF(INFO, "rx: %c (0x%02X)\n\r", byte, byte);
+	//DPRINTF(INFO, "rx: %c (0x%02X)\n\r", byte, byte);
 	if (lbHandle.isEscaping) {
 		lb_handle_escaped(byte);
 	} else if (byte == LB_KEY_ESC) {
 		lbHandle.isEscaping = true;
+	} else if (byte == LB_KEY_TAB) {
+		lb_auto_complete();
 	} else if (byte == LB_KEY_ENTER_WIN) {
 		// Ignore this
 	} else if (byte == LB_KEY_ENTER_UNIX) {
@@ -342,4 +379,14 @@ void lb_rx(uint8_t byte)
 void lb_set_valid_line_callback(lb_line_callback_t callback)
 {
 	lbHandle.lineCallback = callback;
+}
+
+/**
+ * @brief Define the function callback to call when user hit tab
+ *
+ * @param callback Pointer on function, can be NULL to remove callback
+ */
+void lb_set_autocomplete_callback(lb_autocomplete_callback_t callback)
+{
+	lbHandle.autoCompCallback = callback;
 }
