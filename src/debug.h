@@ -44,7 +44,7 @@ int debugLineBuffer = 0;
 #define DEBUG_OUTPUT
 #define DEBUG_ENABLE(flag)
 #define DEBUG_DISABLE(flag)
-#define DEBUG(flag)
+#define DEBUG_BLOC(flag) if (0) // Should be removed by optimisation
 #define DPRINTF(flag, ...)
 
 #endif /* DEBUG */
