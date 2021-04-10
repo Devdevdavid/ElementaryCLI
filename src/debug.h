@@ -11,6 +11,7 @@ int debugCli = 0;
 #define DEBUG_ERROR  0x0002
 #define DEBUG_FINDER 0x0004
 #define DEBUG_PARSER 0x0008
+#define DEBUG_AUTOC  0x0010
 
 #elif defined(LINE_BUFFER_C)
 // Variable declaration

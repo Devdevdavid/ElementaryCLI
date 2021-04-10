@@ -325,18 +325,27 @@ static char * cli_autocomplete(char * cmdText[], int cmdTextCount)
 	char *      lastCmdText;
 	int         alternatives   = 0;
 	char        emptyString[1] = "";
+	int         depth;
 
 	// FIND TOKENS
 	// If all cmdText are recognized, there is no alternatives to give
 	// If depth == 0, the last recognized is root, we must propose alternatives
-	if (cli_find_last_valid_token(cmdText, cmdTextCount, &curTok) > 0) {
-		return NULL; // No alternatives
+	depth = cli_find_last_valid_token(cmdText, cmdTextCount, &curTok);
+	if (depth > 0) {
+		// There is no alternatives for leafs (We won't propose to complete arguments)
+		// So just print usage
+		if (cli_is_token_a_leaf(curTok)) {
+			cli_usage(curTok);
+			DPRINTF(AUTOC, "Last token is a leaf\n\r");
+			return NULL;
+		}
 	}
 
 	// Shortcuts
-	if (cmdTextCount == 0) {
-		// Here, user tries to autocomplete an empty string
-		// we gonna print all root child
+	if (cmdTextCount == depth) {
+		// Here, user tries to autocomplete a already completed token
+		// He actually wants all childs of this token
+		// Use empty string to match all childs
 		lastCmdText    = emptyString;
 		lastCmdTextLen = 0;
 	} else {
@@ -364,20 +373,21 @@ static char * cli_autocomplete(char * cmdText[], int cmdTextCount)
 			}
 		}
 
-		// Execute this block only when state == 0
-		if (state > 0) {
-			continue;
-		} else if (alternatives == 0) {
-			break; // Nothing to do
-		} else if (alternatives == 1) {
-			return lastAlternativeTok->text;
-		} else {
-			printf("\n\r"); // Go to next line before printing alternatives
-			continue;
+		// Choose what to do according to the number
+		// of alternatives found on state 0
+		if (state == 0) {
+			if (alternatives == 0) {
+				break; // Nothing to do, don't bother with state 1
+			} else if (alternatives == 1) {
+				return lastAlternativeTok->text;
+			} else {
+				printf("\n\r"); // Go to next line before printing alternatives
+				continue;
+			}
 		}
 	}
 
-	return NULL; // No alternatives
+	return NULL; // No unique alternative
 }
 
 // ===================
@@ -393,6 +403,7 @@ int cli_init(void)
 	DEBUG_ENABLE(ERROR);
 	//DEBUG_ENABLE(PARSER);
 	//DEBUG_ENABLE(FINDER);
+	DEBUG_ENABLE(AUTOC);
 
 	// Empty token list
 	memset(tokenList, 0, sizeof(tokenList));
@@ -577,6 +588,7 @@ int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBuff
 	// Search for alternatives
 	char * pText = cli_autocomplete(cmdText, cmdTextCount);
 	if (pText == NULL) {
+		DPRINTF(AUTOC, "No unique alternative found\n\r");
 		return 0; // Nothing added
 	}
 
@@ -586,15 +598,18 @@ int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBuff
 	// Check overflow
 	if (countToAdd > outBufferMaxLen) {
 		// Not enough space to autocomplete, do nothing
+		DPRINTF(ERROR, "Not enough space in line buffer for autocompletion\n\r");
 		return 0;
 	}
 
 	// Append the text to add and update max len
 	cli_strcpy_safe(outBuffer, pText + countAlreadyWrote, outBufferMaxLen);
 	outBufferMaxLen -= countToAdd;
+	DPRINTF(AUTOC, "Adding %d bytes\n\r", countToAdd);
 
 	// Append an extra space (" ") if there is enough memory
 	if (outBufferMaxLen >= 1) {
+		DPRINTF(AUTOC, "Adding extra space\n\r");
 		cli_strcpy_safe(outBuffer + countToAdd, " ", outBufferMaxLen);
 		countToAdd += 1;
 	}
