@@ -121,8 +121,7 @@ static void cli_usage(cli_token * curTok)
  * etc.
  * @param cmdTextCount Number of element in cmdText
  * @param curTok Returned pointer
- * @return >= 0: depth (number of token in command), -1: text is unknown (last
- * known token returned)
+ * @return depth abs(depth): Number of valid tokens, <0: token abs(depth) + 1 is not valid
  */
 static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_token ** curTok)
 {
@@ -156,7 +155,7 @@ static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_tok
 		// Check not found
 		if (childIndex >= CLI_MAX_CHILDS) {
 			DPRINTF(FINDER, "- failed\n\r");
-			return -1;
+			return -depth; // Negative depth: depth first tokens are valid but not (depth+1)
 		}
 
 		// Check arguments - If this child has arguments, remaining cmdText should
@@ -268,6 +267,9 @@ static int cli_execute(char * cmdText[], int cmdTextCount)
 	// FIND TOKENS
 	depth = cli_find_last_valid_token(cmdText, cmdTextCount, &curTok);
 	if (depth <= 0) {
+		// -depth is the index of the first not valid token
+		// (+1 to get not valid, -1: because starts at 0)
+		DPRINTF(ERROR, "Unknown command \"%s\"\n\r", cmdText[-depth]);
 		goto retFailed;
 	}
 
@@ -403,7 +405,7 @@ int cli_init(void)
 	DEBUG_ENABLE(ERROR);
 	//DEBUG_ENABLE(PARSER);
 	//DEBUG_ENABLE(FINDER);
-	DEBUG_ENABLE(AUTOC);
+	//DEBUG_ENABLE(AUTOC);
 
 	// Empty token list
 	memset(tokenList, 0, sizeof(tokenList));
