@@ -16,6 +16,7 @@ static volatile int keepRunning = 1;
 void sigint_handler(int dummy)
 {
 	keepRunning = 0;
+	cli_exit();
 	printf("\n\r- Quitting...\n\r");
 }
 

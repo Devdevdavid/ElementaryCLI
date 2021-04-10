@@ -12,8 +12,9 @@ typedef struct {
 	char *  curLineBuffer;  /**< The line currently under edition by user */
 	uint8_t lineSize;       /**< Size of the line (without ending '\0') */
 	char *  pCurPos;        /**< Current position of the cursor */
-	uint8_t isEscaping : 1; /**< Tell if next bytes will be managed as escaped command */
 	uint8_t escPos;         /**< Current position in the escBuffer */
+	uint8_t isEscaping : 1; /**< Tell if next bytes will be managed as escaped command */
+	uint8_t isExiting : 1;  /**< Tell if module is in exiting mode */
 
 	lb_line_callback_t         lineCallback;     /**< Function called when user valid a line */
 	lb_autocomplete_callback_t autoCompCallback; /**< Function called when user request an autocompletion */
@@ -259,6 +260,11 @@ static int lb_save_to_history(void)
  */
 static void lb_term_update(void)
 {
+	// Do not display prompt on exit
+	if (lbHandle.isExiting) {
+		return;
+	}
+
 	// [%dD set cursor pos
 	printf("\x1B[1000D" // Set cursor to begin line
 		   "\x1B[K"     // Kill line
@@ -358,7 +364,9 @@ void lb_process_line(void)
 void lb_rx(uint8_t byte)
 {
 	//DPRINTF(INFO, "rx: %c (0x%02X)\n\r", byte, byte);
-	if (lbHandle.isEscaping) {
+	if (lbHandle.isExiting) {
+		return;
+	} else if (lbHandle.isEscaping) {
 		lb_handle_escaped(byte);
 	} else if (byte == LB_KEY_ESC) {
 		lbHandle.isEscaping = true;
@@ -394,4 +402,14 @@ void lb_set_valid_line_callback(lb_line_callback_t callback)
 void lb_set_autocomplete_callback(lb_autocomplete_callback_t callback)
 {
 	lbHandle.autoCompCallback = callback;
+}
+
+/**
+ * @brief Put LineBuffer in exit mode
+ * @details No more character will be accepted and
+ * the prompt is not displayed anymore
+ */
+void lb_exit(void)
+{
+	lbHandle.isExiting = true;
 }

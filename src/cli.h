@@ -63,5 +63,6 @@ int          cli_parse_cmd_text(char * cmdEdit, char * cmdText[]);
 int          cli_autocomplete_command(const char * str, int len, char * outBuffer, int outBufferMaxLen);
 int          cli_input_command(const char * str, int len);
 void         cli_rx(uint8_t byte);
+void         cli_exit(void);
 
 #endif /* CLI_H */

@@ -348,6 +348,9 @@ int cli_init(void)
 	//DEBUG_ENABLE(PARSER);
 	//DEBUG_ENABLE(FINDER);
 
+	// Empty token list
+	memset(tokenList, 0, sizeof(tokenList));
+
 	// Add root children
 	cli_add_token(CLI_ROOT_TOKEN_NAME, "");
 
@@ -620,4 +623,14 @@ int cli_input_command(const char * str, int len)
 void cli_rx(uint8_t byte)
 {
 	lb_rx(byte);
+}
+
+/**
+ * @brief Exit CLI
+ *
+ * @param byte The value of the caracter
+ */
+void cli_exit(void)
+{
+	lb_exit();
 }

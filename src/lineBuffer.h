@@ -45,5 +45,6 @@ void lb_init(void);
 void lb_rx(uint8_t byte);
 void lb_set_valid_line_callback(lb_line_callback_t callback);
 void lb_set_autocomplete_callback(lb_autocomplete_callback_t callback);
+void lb_exit(void);
 
 #endif /* LINE_BUFFER_H */
