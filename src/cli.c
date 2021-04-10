@@ -74,11 +74,23 @@ static void cli_print_token(cli_token * curTok)
 // ===================
 
 /**
+ * @brief Tell if given token is a leaf
+ * @details A leaf is a token with no children
+ *
+ * @param curTok Pointer
+ * @return boolean
+ */
+static bool cli_is_token_a_leaf(cli_token * curTok)
+{
+	return curTok->isLeaf == true;
+}
+
+/**
  * @brief Give the usage for a specified token
  *
  * @param curTok Pointer
  */
-static void usage(cli_token * curTok)
+static void cli_usage(cli_token * curTok)
 {
 	// Not the same header if root
 	printf("Usage");
@@ -162,134 +174,13 @@ static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_tok
 	return depth;
 }
 
-// ===================
-//       EXTERN
-// ===================
-
-/**
- * @brief Safely copy src into dest with a max length and
- * set the ending string character
- * @details [long description]
- *
- * @param dest Pointer
- * @param src Pointer
- * @param maxLen Max length of dest
- */
-void cli_strcpy_safe(char * dest, const char * src, int maxLen)
-{
-	strncpy(dest, src, maxLen);
-	dest[maxLen - 1] = '\0';
-}
-
-/**
- * @brief Tell if given token is a leaf
- * @details A leaf is a token with no children
- *
- * @param curTok Pointer
- * @return boolean
- */
-bool cli_is_token_a_leaf(cli_token * curTok)
-{
-	return curTok->isLeaf == true;
-}
-
-/**
- * @brief Add a token to the list of known tokens
- *
- * @param text The text of the token
- * @param desc The description of the token
- * @return a pointer to the newly created token
- */
-cli_token * cli_add_token(const char * text, const char * desc)
-{
-	cli_token * curTok = NULL;
-
-	// Find a not used token (Considered not used if text is not set)
-	for (int i = 0; i < CLI_MAX_TOKEN_COUNT; ++i) {
-		if (tokenList[i].text[0] == '\0') {
-			curTok = &tokenList[i];
-			break;
-		}
-	}
-
-	// Check overflow
-	if (curTok == NULL) {
-		DPRINTF(ERROR, "Unable to add token \"%s\", maximum reach: %d\n\r",
-				curTok->text, CLI_MAX_TOKEN_COUNT);
-		return NULL;
-	}
-
-	// Clear and fill the structure
-	memset(curTok, 0, sizeof(*curTok));
-	cli_strcpy_safe(curTok->text, text, CLI_MAX_TEXT_LEN);
-	cli_strcpy_safe(curTok->desc, desc, CLI_MAX_DESC_LEN);
-	curTok->isLeaf = true;
-
-	return curTok;
-}
-
-/**
- * @brief Add a children to a token
- *
- * @param parent Pointer
- * @param children Pointer
- *
- * @return 0: ok, -1: Can't take more children
- */
-int cli_add_children(cli_token * parent, cli_token * children)
-{
-	if (parent->argc > 0) {
-		DPRINTF(
-		ERROR,
-		"Unable to add children for token \"%s\", parent has %d arguments\n\r",
-		parent->text, parent->argc);
-		return -1;
-	}
-
-	for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
-		if (parent->childs[i] == NULL) {
-			parent->childs[i] = children;
-
-			// Token with children are no longer a leaf
-			parent->isLeaf = false;
-			return 0;
-		}
-	}
-
-	DPRINTF(ERROR,
-			"Unable to add children for token \"%s\", parent has no empty child "
-			"(CLI_MAX_CHILDS = %d)\n\r",
-			parent->text, CLI_MAX_CHILDS);
-	return -1;
-}
-
-/**
- * @brief Set callback
- * @details [long description]
- *
- * @param curTok Pointer
- * @param callback Pointer to function
- * @return 0
- */
-int cli_set_callback(cli_token * curTok, cli_callback_t callback)
-{
-	if (!cli_is_token_a_leaf(curTok)) {
-		DPRINTF(ERROR,
-				"Unable to set callback for token \"%s\", token is not a leaf\n\r",
-				curTok->text);
-		return -1;
-	}
-	curTok->callback = callback;
-	return 0;
-}
-
 /**
  * @brief Get the children count of a token
  *
  * @param parent Pointer
  * @return Number of children [0; CLI_MAX_CHILDS]
  */
-int cli_get_children_count(cli_token * parent)
+static int cli_get_children_count(cli_token * parent)
 {
 	int count = 0;
 
@@ -302,185 +193,6 @@ int cli_get_children_count(cli_token * parent)
 }
 
 /**
- * @brief Set the argument count for this token
- *
- * @param curTok Pointer
- * @param argc int
- *
- * @return 0: ok, -1: Error
- */
-int cli_set_argc(cli_token * curTok, int argc)
-{
-	if (!cli_is_token_a_leaf(curTok)) {
-		DPRINTF(
-		ERROR,
-		"Can't set argument count for token \"%s\": token is not a leaf\n\r",
-		curTok->text);
-		return -1;
-	}
-
-	if (argc <= 0) {
-		DPRINTF(ERROR, "Invalid argument count for token \"%s\": %d\n\r",
-				curTok->text, argc);
-		return -1;
-	}
-
-	curTok->argc = argc;
-	return 0;
-}
-
-/**
- * @brief Give the root token pointer
- * @return Pointer to root token
- */
-cli_token * cli_get_root_token(void)
-{
-	return &tokenList[0];
-}
-
-/**
- * @brief Init module
- * @return 0
- */
-int cli_init(void)
-{
-	DEBUG_ENABLE(ERROR);
-	//DEBUG_ENABLE(PARSER);
-	//DEBUG_ENABLE(FINDER);
-
-	// Empty token list
-	memset(tokenList, 0, sizeof(tokenList));
-
-	// Add root children
-	cli_add_token(CLI_ROOT_TOKEN_NAME, "");
-
-	// Init LineBuffer
-	lb_init();
-	lb_set_valid_line_callback(&cli_input_command);
-	lb_set_autocomplete_callback(&cli_autocomplete_command);
-	return 0;
-}
-
-/**
- * @brief Execute a command
- *
- * @param cmdText Array of char pointer : [0] -> "word1\0", [1] -> "word2\0",
- * etc.
- * @param cmdTextCount Number of element in cmdText
- * @return The callback return, -1: Error
- */
-int cli_execute_command(char * cmdText[], int cmdTextCount)
-{
-	cli_token * curTok = cli_get_root_token();
-	int         depth;
-	char **     argv = NULL;
-
-	// FIND TOKENS
-	depth = cli_find_last_valid_token(cmdText, cmdTextCount, &curTok);
-	if (depth <= 0) {
-		usage(curTok);
-		return -1;
-	}
-
-	// Error if not a leaf
-	if (cli_is_token_a_leaf(curTok) == false) {
-		usage(curTok);
-		return -1;
-	}
-
-	// Check arguments
-	if (curTok->argc > 0) {
-		// Get the number of cmdText that are not tokens
-		if ((cmdTextCount - depth) < curTok->argc) {
-			DPRINTF(ERROR, "This command takes %d arguments !\n\r", curTok->argc);
-			usage(curTok);
-			return -1;
-		}
-
-		// The first argument starts right after the last valid token
-		argv = &cmdText[depth];
-	}
-
-	// Check null callback
-	if (curTok->callback == NULL) {
-		DPRINTF(ERROR, "No callback defined for this command !\n\r");
-		return -1;
-	}
-
-	// Call the function eventually and return its value
-	return curTok->callback(curTok->argc, argv);
-}
-
-/**
- * @brief Auto-complete a command or propose choice
- *
- * @param cmdText Array of char pointer : [0] -> "word1\0", [1] -> "word2\0",
- * etc.
- * @param cmdTextCount Number of element in cmdText
- * @return NULL: Either no alternative or more than one, >0: A pointer to the
- * only alternative possible
- */
-char * cli_auto_complete(char * cmdText[], int cmdTextCount)
-{
-	cli_token * curTok             = cli_get_root_token();
-	cli_token * lastAlternativeTok = NULL;
-	int         lastCmdTextLen;
-	char *      lastCmdText;
-	int         alternatives = 0;
-
-	// FIND TOKENS
-	// if it failed, propose alternatives
-	if (cli_find_last_valid_token(cmdText, cmdTextCount, &curTok) != 0) {
-		// Shortcuts
-		lastCmdText    = cmdText[cmdTextCount - 1];
-		lastCmdTextLen = strlen(lastCmdText);
-
-		// Do this in 2 states:
-		// 1. Count alternatives
-		// 2. Print them if more than 1
-		for (int state = 0; state < 2; ++state) {
-			// For all childs of the last valid token found...
-			for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
-				if (curTok->childs[i] == NULL) {
-					continue;
-				}
-				// Does the last text match this child ?
-				if (strncmp(lastCmdText, curTok->childs[i]->text, lastCmdTextLen) ==
-					0) {
-					if (state == 0) {
-						++alternatives;
-						lastAlternativeTok = curTok->childs[i];
-					} else if (state == 1) {
-						printf("%s\t%s\n\r", curTok->childs[i]->text,
-							   curTok->childs[i]->desc);
-					}
-				}
-			}
-
-			if (alternatives == 0) {
-				break; // Nothing to do
-			} else if (alternatives == 1) {
-				return lastAlternativeTok->text;
-			} else {
-				printf("\n\r"); // Go to next line before printing alternatives
-				continue;
-			}
-		}
-	}
-
-	return NULL;
-}
-
-/**
- * @brief Give a string containing the version of CLI
- * @return String pointer
- */
-const char * cli_get_version(void)
-{
-	return cliVersionName;
-}
-
-/**
  * @brief Split a string by spaces into a list of strings
  *
  * @param cmdEdit Editable buffer "word1 word2 word3"
@@ -489,7 +201,7 @@ const char * cli_get_version(void)
  *
  * @return Number of cmdText found (Ex: 3), -1: Error
  */
-int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
+static int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 {
 	int    cmdTextCount = 0;
 	char * pCmd         = cmdEdit;
@@ -540,6 +252,281 @@ int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 }
 
 /**
+ * @brief Execute a command
+ *
+ * @param cmdText Array of char pointer : [0] -> "word1\0", [1] -> "word2\0",
+ * etc.
+ * @param cmdTextCount Number of element in cmdText
+ * @return The callback return, -1: Error
+ */
+static int cli_execute(char * cmdText[], int cmdTextCount)
+{
+	cli_token * curTok = cli_get_root_token();
+	int         depth;
+	char **     argv = NULL;
+
+	// FIND TOKENS
+	depth = cli_find_last_valid_token(cmdText, cmdTextCount, &curTok);
+	if (depth <= 0) {
+		cli_usage(curTok);
+		return -1;
+	}
+
+	// Error if not a leaf
+	if (cli_is_token_a_leaf(curTok) == false) {
+		cli_usage(curTok);
+		return -1;
+	}
+
+	// Check arguments
+	if (curTok->argc > 0) {
+		// Get the number of cmdText that are not tokens
+		if ((cmdTextCount - depth) < curTok->argc) {
+			DPRINTF(ERROR, "This command takes %d arguments !\n\r", curTok->argc);
+			cli_usage(curTok);
+			return -1;
+		}
+
+		// The first argument starts right after the last valid token
+		argv = &cmdText[depth];
+	}
+
+	// Check null callback
+	if (curTok->callback == NULL) {
+		DPRINTF(ERROR, "No callback defined for this command !\n\r");
+		return -1;
+	}
+
+	// Call the function eventually and return its value
+	return curTok->callback(curTok->argc, argv);
+}
+
+/**
+ * @brief Auto-complete a command or propose choice
+ *
+ * @param cmdText Array of char pointer : [0] -> "word1\0", [1] -> "word2\0",
+ * etc.
+ * @param cmdTextCount Number of element in cmdText
+ * @return NULL: Either no alternative or more than one, >0: A pointer to the
+ * only alternative possible
+ */
+static char * cli_autocomplete(char * cmdText[], int cmdTextCount)
+{
+	cli_token * curTok             = cli_get_root_token();
+	cli_token * lastAlternativeTok = NULL;
+	int         lastCmdTextLen;
+	char *      lastCmdText;
+	int         alternatives = 0;
+
+	// FIND TOKENS
+	// if it failed, propose alternatives
+	if (cli_find_last_valid_token(cmdText, cmdTextCount, &curTok) != 0) {
+		// Shortcuts
+		lastCmdText    = cmdText[cmdTextCount - 1];
+		lastCmdTextLen = strlen(lastCmdText);
+
+		// Do this in 2 states:
+		// 1. Count alternatives
+		// 2. Print them if more than 1
+		for (int state = 0; state < 2; ++state) {
+			// For all childs of the last valid token found...
+			for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
+				if (curTok->childs[i] == NULL) {
+					continue;
+				}
+				// Does the last text match this child ?
+				if (strncmp(lastCmdText, curTok->childs[i]->text, lastCmdTextLen) ==
+					0) {
+					if (state == 0) {
+						++alternatives;
+						lastAlternativeTok = curTok->childs[i];
+					} else if (state == 1) {
+						printf("%s\t%s\n\r", curTok->childs[i]->text,
+							   curTok->childs[i]->desc);
+					}
+				}
+			}
+
+			if (alternatives == 0) {
+				break; // Nothing to do
+			} else if (alternatives == 1) {
+				return lastAlternativeTok->text;
+			} else {
+				printf("\n\r"); // Go to next line before printing alternatives
+				continue;
+			}
+		}
+	}
+
+	return NULL;
+}
+
+// ===================
+//       EXTERN
+// ===================
+
+/**
+ * @brief Init module
+ * @return 0
+ */
+int cli_init(void)
+{
+	DEBUG_ENABLE(ERROR);
+	//DEBUG_ENABLE(PARSER);
+	//DEBUG_ENABLE(FINDER);
+
+	// Empty token list
+	memset(tokenList, 0, sizeof(tokenList));
+
+	// Add root children
+	cli_add_token(CLI_ROOT_TOKEN_NAME, "");
+
+	// Init LineBuffer
+	lb_init();
+	lb_set_valid_line_callback(&cli_execute_lb);
+	lb_set_autocomplete_callback(&cli_autocomplete_lb);
+	return 0;
+}
+
+/**
+ * @brief Safely copy src into dest with a max length and
+ * set the ending string character
+ * @details [long description]
+ *
+ * @param dest Pointer
+ * @param src Pointer
+ * @param maxLen Max length of dest
+ */
+void cli_strcpy_safe(char * dest, const char * src, int maxLen)
+{
+	strncpy(dest, src, maxLen);
+	dest[maxLen - 1] = '\0';
+}
+
+/**
+ * @brief Give a string containing the version of CLI
+ * @return String pointer
+ */
+const char * cli_get_version(void)
+{
+	return cliVersionName;
+}
+
+/**
+ * @brief Add a token to the list of known tokens
+ *
+ * @param text The text of the token
+ * @param desc The description of the token
+ * @return a pointer to the newly created token
+ */
+cli_token * cli_add_token(const char * text, const char * desc)
+{
+	cli_token * curTok = NULL;
+
+	// Find a not used token (Considered not used if text is not set)
+	for (int i = 0; i < CLI_MAX_TOKEN_COUNT; ++i) {
+		if (tokenList[i].text[0] == '\0') {
+			curTok = &tokenList[i];
+			break;
+		}
+	}
+
+	// Check overflow
+	if (curTok == NULL) {
+		DPRINTF(ERROR, "Unable to add token \"%s\", maximum reach: %d\n\r", curTok->text, CLI_MAX_TOKEN_COUNT);
+		return NULL;
+	}
+
+	// Clear and fill the structure
+	memset(curTok, 0, sizeof(*curTok));
+	cli_strcpy_safe(curTok->text, text, CLI_MAX_TEXT_LEN);
+	cli_strcpy_safe(curTok->desc, desc, CLI_MAX_DESC_LEN);
+	curTok->isLeaf = true;
+
+	return curTok;
+}
+
+/**
+ * @brief Add a children to a token
+ *
+ * @param parent Pointer
+ * @param children Pointer
+ *
+ * @return 0: ok, -1: Can't take more children
+ */
+int cli_add_children(cli_token * parent, cli_token * children)
+{
+	if (parent->argc > 0) {
+		DPRINTF(ERROR, "Unable to add children for token \"%s\", parent has %d arguments\n\r", parent->text, parent->argc);
+		return -1;
+	}
+
+	for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
+		if (parent->childs[i] == NULL) {
+			parent->childs[i] = children;
+
+			// Token with children are no longer a leaf
+			parent->isLeaf = false;
+			return 0;
+		}
+	}
+
+	DPRINTF(ERROR, "Unable to add children for token \"%s\", parent has no empty child (CLI_MAX_CHILDS = %d)\n\r", parent->text, CLI_MAX_CHILDS);
+	return -1;
+}
+
+/**
+ * @brief Set callback
+ * @details [long description]
+ *
+ * @param curTok Pointer
+ * @param callback Pointer to function
+ * @return 0
+ */
+int cli_set_callback(cli_token * curTok, cli_callback_t callback)
+{
+	if (!cli_is_token_a_leaf(curTok)) {
+		DPRINTF(ERROR, "Unable to set callback for token \"%s\", token is not a leaf\n\r", curTok->text);
+		return -1;
+	}
+	curTok->callback = callback;
+	return 0;
+}
+
+/**
+ * @brief Set the argument count for this token
+ *
+ * @param curTok Pointer
+ * @param argc int
+ *
+ * @return 0: ok, -1: Error
+ */
+int cli_set_argc(cli_token * curTok, int argc)
+{
+	if (!cli_is_token_a_leaf(curTok)) {
+		DPRINTF(ERROR, "Can't set argument count for token \"%s\": token is not a leaf\n\r", curTok->text);
+		return -1;
+	}
+
+	if (argc <= 0) {
+		DPRINTF(ERROR, "Invalid argument count for token \"%s\": %d\n\r", curTok->text, argc);
+		return -1;
+	}
+
+	curTok->argc = argc;
+	return 0;
+}
+
+/**
+ * @brief Give the root token pointer
+ * @return Pointer to root token
+ */
+cli_token * cli_get_root_token(void)
+{
+	return &tokenList[0];
+}
+
+/**
  * @brief Callback function for LineBuffer
  * @details The definition of this function must follow
  * the one defined in LineBuffer
@@ -551,7 +538,7 @@ int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
  *
  * @return The result of the command
  */
-int cli_autocomplete_command(const char * str, int len, char * outBuffer, int outBufferMaxLen)
+int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBufferMaxLen)
 {
 	char   cmdEdit[CLI_CMD_MAX_LEN]; // Editable copy of str
 	char * cmdText[CLI_CMD_MAX_TOKEN];
@@ -568,7 +555,7 @@ int cli_autocomplete_command(const char * str, int len, char * outBuffer, int ou
 	}
 
 	// Search for alternatives
-	char * pText = cli_auto_complete(cmdText, cmdTextCount);
+	char * pText = cli_autocomplete(cmdText, cmdTextCount);
 	if (pText == NULL) {
 		return 0; // Nothing added
 	}
@@ -597,7 +584,7 @@ int cli_autocomplete_command(const char * str, int len, char * outBuffer, int ou
  *
  * @return The result of the command
  */
-int cli_input_command(const char * str, int len)
+int cli_execute_lb(const char * str, int len)
 {
 	char   cmdEdit[CLI_CMD_MAX_LEN]; // Editable copy of str
 	char * cmdText[CLI_CMD_MAX_TOKEN];
@@ -612,7 +599,7 @@ int cli_input_command(const char * str, int len)
 		return 0;
 	}
 
-	return cli_execute_command(cmdText, cmdTextCount);
+	return cli_execute(cmdText, cmdTextCount);
 }
 
 /**

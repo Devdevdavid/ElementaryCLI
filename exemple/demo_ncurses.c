@@ -24,6 +24,14 @@ void sigint_handler(int dummy)
 // CMD CALLBACKS
 // ================
 
+/**
+ * @brief Trigger the SIGINT signal to request application exit
+ *
+ * @param argc UNUSED
+ * @param argv UNUSED
+ *
+ * @return 0
+ */
 int cli_cb_exit(int argc, char * argv[])
 {
 	sigint_handler(SIGINT);

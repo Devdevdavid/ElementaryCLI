@@ -47,21 +47,16 @@ struct cli_token_t {
 // Protoypes
 // ======================
 
+int          cli_init(void);
 void         cli_strcpy_safe(char * dest, const char * src, int maxLen);
-bool         cli_is_token_a_leaf(cli_token * curTok);
+const char * cli_get_version(void);
 cli_token *  cli_add_token(const char * text, const char * desc);
 int          cli_add_children(cli_token * parent, cli_token * children);
 int          cli_set_callback(cli_token * curTok, cli_callback_t callback);
-int          cli_get_children_count(cli_token * parent);
 int          cli_set_argc(cli_token * curTok, int argc);
 cli_token *  cli_get_root_token(void);
-int          cli_init(void);
-int          cli_execute_command(char * cmdText[], int cmdTextCount);
-char *       cli_auto_complete(char * cmdText[], int cmdTextCount);
-const char * cli_get_version(void);
-int          cli_parse_cmd_text(char * cmdEdit, char * cmdText[]);
-int          cli_autocomplete_command(const char * str, int len, char * outBuffer, int outBufferMaxLen);
-int          cli_input_command(const char * str, int len);
+int          cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBufferMaxLen);
+int          cli_execute_lb(const char * str, int len);
 void         cli_rx(uint8_t byte);
 void         cli_exit(void);
 

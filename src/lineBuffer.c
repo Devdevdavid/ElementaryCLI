@@ -256,60 +256,20 @@ static int lb_save_to_history(void)
 }
 
 /**
- * @brief Refresh the line displayed on the terminal
- */
-static void lb_term_update(void)
-{
-	// Do not display prompt on exit
-	if (lbHandle.isExiting) {
-		return;
-	}
-
-	// [%dD set cursor pos
-	printf("\x1B[1000D" // Set cursor to begin line
-		   "\x1B[K"     // Kill line
-		   "> %s"       // Print prompt and line
-		   "\x1B[1000D" // Set cursor to begin line
-		   "\x1B[%dC",  // Set cursor to actual position
-		   lbHandle.curLineBuffer, 2 + lb_get_cursor_pos());
-}
-
-// ===================
-//      EXTERN
-// ===================
-
-/**
  * @brief Get the current cursor position
  * @return position
  */
-int lb_get_cursor_pos(void)
+static int lb_get_cursor_pos(void)
 {
 	int curPos = lbHandle.pCurPos - lbHandle.curLineBuffer;
 	return (int) curPos;
 }
 
 /**
- * @brief Initialize the module
- */
-void lb_init(void)
-{
-	DEBUG_ENABLE(ERROR);
-	DEBUG_ENABLE(INFO);
-
-	// Init handle
-	memset(&lbHandle, 0, sizeof(lbHandle));
-	lbHandle.curLineBuffer = lbHandle.lineBufferTable[0];
-	lbHandle.pCurPos       = lbHandle.curLineBuffer;
-
-	// Display prompt on init
-	lb_term_update();
-}
-
-/**
  * @brief Look for an auto completion by calling the
  * specified callback
  */
-void lb_auto_complete(void)
+static void lb_auto_complete(void)
 {
 	int    remainLen, count;
 	char * appendBuffer;
@@ -341,7 +301,7 @@ void lb_auto_complete(void)
 /**
  * @brief Process the lineBuffer once validated by user
  */
-void lb_process_line(void)
+static void lb_process_line(void)
 {
 	// Keep the actual display on line n
 	// and move to n+1 to display command's results
@@ -354,6 +314,66 @@ void lb_process_line(void)
 
 	// Save the command into history
 	lb_save_to_history();
+}
+
+/**
+ * @brief Refresh the line displayed on the terminal
+ */
+static void lb_term_update(void)
+{
+	// Do not display prompt on exit
+	if (lbHandle.isExiting) {
+		return;
+	}
+
+	// [%dD set cursor pos
+	printf("\x1B[1000D" // Set cursor to begin line
+		   "\x1B[K"     // Kill line
+		   "> %s"       // Print prompt and line
+		   "\x1B[1000D" // Set cursor to begin line
+		   "\x1B[%dC",  // Set cursor to actual position
+		   lbHandle.curLineBuffer, 2 + lb_get_cursor_pos());
+}
+
+// ===================
+//      EXTERN
+// ===================
+
+/**
+ * @brief Initialize the module
+ */
+void lb_init(void)
+{
+	DEBUG_ENABLE(ERROR);
+	DEBUG_ENABLE(INFO);
+
+	// Init handle
+	memset(&lbHandle, 0, sizeof(lbHandle));
+	lbHandle.curLineBuffer = lbHandle.lineBufferTable[0];
+	lbHandle.pCurPos       = lbHandle.curLineBuffer;
+
+	// Display prompt on init
+	lb_term_update();
+}
+
+/**
+ * @brief Define the function callback to call when user hit enter
+ *
+ * @param callback Pointer on function, can be NULL to remove callback
+ */
+void lb_set_valid_line_callback(lb_line_callback_t callback)
+{
+	lbHandle.lineCallback = callback;
+}
+
+/**
+ * @brief Define the function callback to call when user hit tab
+ *
+ * @param callback Pointer on function, can be NULL to remove callback
+ */
+void lb_set_autocomplete_callback(lb_autocomplete_callback_t callback)
+{
+	lbHandle.autoCompCallback = callback;
 }
 
 /**
@@ -382,26 +402,6 @@ void lb_rx(uint8_t byte)
 		lb_insert_at_cursor((char) byte);
 	}
 	lb_term_update();
-}
-
-/**
- * @brief Define the function callback to call when user hit enter
- *
- * @param callback Pointer on function, can be NULL to remove callback
- */
-void lb_set_valid_line_callback(lb_line_callback_t callback)
-{
-	lbHandle.lineCallback = callback;
-}
-
-/**
- * @brief Define the function callback to call when user hit tab
- *
- * @param callback Pointer on function, can be NULL to remove callback
- */
-void lb_set_autocomplete_callback(lb_autocomplete_callback_t callback)
-{
-	lbHandle.autoCompCallback = callback;
 }
 
 /**
