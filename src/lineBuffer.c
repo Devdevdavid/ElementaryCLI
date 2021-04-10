@@ -62,7 +62,11 @@ static void lb_insert_at_cursor(char toInsert)
 
 	// Check size before inserting
 	if ((lbHandle.lineSize + 1) >= LB_LINE_BUFFER_LENGTH) {
-		DPRINTF(ERROR, "Line buffer is full ! (LB_LINE_BUFFER_LENGTH = %d)", LB_LINE_BUFFER_LENGTH);
+		DEBUG_BLOC(ERROR)
+		{
+			printf("\n\r");
+			DPRINTF(ERROR, "Line buffer is full ! (LB_LINE_BUFFER_LENGTH = %d)\n\r", LB_LINE_BUFFER_LENGTH);
+		}
 		return;
 	}
 
@@ -246,6 +250,7 @@ static int lb_save_to_history(void)
 	lbHandle.pCurPos = lbHandle.curLineBuffer;
 	memset(lbHandle.curLineBuffer, 0, LB_LINE_BUFFER_LENGTH);
 	lbHandle.explorerIndex = lbHandle.historyIndex;
+	lbHandle.lineSize      = 0;
 	return 0;
 }
 
