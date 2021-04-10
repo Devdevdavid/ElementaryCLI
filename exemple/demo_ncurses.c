@@ -50,7 +50,7 @@ int print_args(int argc, char * argv[])
 {
 	printf("print_args() Found %d args:\n\r", argc);
 	for (int i = 0; i < argc; ++i) {
-		printf("\t%s\n", argv[i]);
+		printf("\t%s\n\r", argv[i]);
 	}
 	return 0;
 }
@@ -72,31 +72,32 @@ static int create_cli_commands(void)
 
 	tokLan = cli_add_token("lan", "LAN configuration");
 	{
-		curTok = cli_add_token("show", "Show configuration");
+		curTok = cli_add_token("show", "[interface] Show configuration");
 		cli_set_callback(curTok, &print_args);
+		cli_set_argc(curTok, 0, 1);
 		cli_add_children(tokLan, curTok);
 
 		tokIpSet = cli_add_token("set", "Define new configuration");
 		{
 			curTok = cli_add_token("ip", "<address> Set IP adress");
 			cli_set_callback(curTok, &print_args);
-			cli_set_argc(curTok, 1);
+			cli_set_argc(curTok, 1, 0);
 			cli_add_children(tokIpSet, curTok);
 
 			curTok = cli_add_token("gateway", "<address> Set gateway adress");
 			cli_set_callback(curTok, &print_args);
-			cli_set_argc(curTok, 1);
+			cli_set_argc(curTok, 1, 0);
 			cli_add_children(tokIpSet, curTok);
 
 			curTok = cli_add_token("mask", "<address> Set network mask");
 			cli_set_callback(curTok, &print_args);
-			cli_set_argc(curTok, 1);
+			cli_set_argc(curTok, 1, 0);
 			cli_add_children(tokIpSet, curTok);
 
 			curTok =
 			cli_add_token("proxy", "<address> <port> Set the proxy location");
 			cli_set_callback(curTok, &print_args);
-			cli_set_argc(curTok, 2);
+			cli_set_argc(curTok, 2, 0);
 			cli_add_children(tokIpSet, curTok);
 		}
 		cli_add_children(tokLan, tokIpSet);

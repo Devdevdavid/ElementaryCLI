@@ -38,7 +38,8 @@ struct cli_token_t {
 	char           text[CLI_MAX_TEXT_LEN]; /**< Name of the token */
 	char           desc[CLI_MAX_DESC_LEN]; /**< Description of the token */
 	cli_token *    childs[CLI_MAX_CHILDS]; /**< Pointer to all token child (None if leaf) */
-	int            argc;                   /**< Number of arguments required by the leaf */
+	int            mandatoryArgc;          /**< Number of mandatory argument of the leaf */
+	int            optionalArgc;           /**< Number of optional argument of the leaf */
 	cli_callback_t callback;               /**< Function to call when user type the command */
 	uint8_t        isLeaf : 1;             /**< Tell if token is a leaf */
 };
@@ -53,7 +54,7 @@ const char * cli_get_version(void);
 cli_token *  cli_add_token(const char * text, const char * desc);
 int          cli_add_children(cli_token * parent, cli_token * children);
 int          cli_set_callback(cli_token * curTok, cli_callback_t callback);
-int          cli_set_argc(cli_token * curTok, int argc);
+int          cli_set_argc(cli_token * curTok, int mandatoryArgc, int optionalArgc);
 cli_token *  cli_get_root_token(void);
 int          cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBufferMaxLen);
 int          cli_execute_lb(const char * str, int len);

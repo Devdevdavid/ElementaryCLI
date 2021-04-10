@@ -142,16 +142,13 @@ static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_tok
 			if ((*curTok)->childs[childIndex] == NULL) {
 				continue;
 			}
-			DPRINTF(FINDER, "Looking child: %s\n\r",
-					(*curTok)->childs[childIndex]->text);
+			DPRINTF(FINDER, "Looking child: %s\n\r", (*curTok)->childs[childIndex]->text);
 
-			if (strncmp((*curTok)->childs[childIndex]->text, cmdText[i],
-						CLI_MAX_TEXT_LEN) == 0) {
+			if (strncmp((*curTok)->childs[childIndex]->text, cmdText[i], CLI_MAX_TEXT_LEN) == 0) {
 				// Found it !
 				(*curTok) = (*curTok)->childs[childIndex];
 				++depth;
-				DPRINTF(FINDER, "Identified child %s (%d)\n\r", (*curTok)->text,
-						childIndex);
+				DPRINTF(FINDER, "Identified child %s (%d)\n\r", (*curTok)->text, childIndex);
 				break;
 			}
 		}
@@ -164,7 +161,7 @@ static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_tok
 
 		// Check arguments - If this child has arguments, remaining cmdText should
 		// be arguments
-		if ((*curTok)->argc > 0) {
+		if (((*curTok)->mandatoryArgc + (*curTok)->optionalArgc) > 0) {
 			DPRINTF(FINDER, "- Next must be arguments...\n\r");
 			break;
 		}
@@ -266,32 +263,35 @@ static int cli_execute(char * cmdText[], int cmdTextCount)
 	cli_token * curTok = cli_get_root_token();
 	int         depth;
 	char **     argv = NULL;
+	int         argc; // Number of argument given by user
 
 	// FIND TOKENS
 	depth = cli_find_last_valid_token(cmdText, cmdTextCount, &curTok);
 	if (depth <= 0) {
-		cli_usage(curTok);
-		return -1;
+		goto retFailed;
 	}
 
 	// Error if not a leaf
 	if (cli_is_token_a_leaf(curTok) == false) {
-		cli_usage(curTok);
-		return -1;
+		goto retFailed;
 	}
 
-	// Check arguments
-	if (curTok->argc > 0) {
-		// Get the number of cmdText that are not tokens
-		if ((cmdTextCount - depth) < curTok->argc) {
-			DPRINTF(ERROR, "This command takes %d arguments !\n\r", curTok->argc);
-			cli_usage(curTok);
-			return -1;
-		}
-
-		// The first argument starts right after the last valid token
-		argv = &cmdText[depth];
+	// Get the number of cmdText that are not tokens
+	// Compare this number to the number of mandatory arguments
+	// If there is more, they are considered as optional arguments
+	argc = cmdTextCount - depth;
+	if (argc < curTok->mandatoryArgc) {
+		DPRINTF(ERROR, "This command takes %d mandatory argument !\n\r", curTok->mandatoryArgc);
+		goto retFailed;
 	}
+
+	if (argc > (curTok->mandatoryArgc + curTok->optionalArgc)) {
+		DPRINTF(ERROR, "This command takes only %d optional argument !\n\r", curTok->optionalArgc);
+		goto retFailed;
+	}
+
+	// The first argument starts right after the last valid token
+	argv = &cmdText[depth];
 
 	// Check null callback
 	if (curTok->callback == NULL) {
@@ -300,7 +300,12 @@ static int cli_execute(char * cmdText[], int cmdTextCount)
 	}
 
 	// Call the function eventually and return its value
-	return curTok->callback(curTok->argc, argv);
+	return curTok->callback(argc, argv);
+
+	// Show usage and return error
+retFailed:
+	cli_usage(curTok);
+	return -1;
 }
 
 /**
@@ -470,8 +475,9 @@ cli_token * cli_add_token(const char * text, const char * desc)
  */
 int cli_add_children(cli_token * parent, cli_token * children)
 {
-	if (parent->argc > 0) {
-		DPRINTF(ERROR, "Unable to add children for token \"%s\", parent has %d arguments\n\r", parent->text, parent->argc);
+	int argc = parent->mandatoryArgc + parent->optionalArgc;
+	if (argc > 0) {
+		DPRINTF(ERROR, "Unable to add children for token \"%s\", parent has %d arguments\n\r", parent->text, argc);
 		return -1;
 	}
 
@@ -508,26 +514,29 @@ int cli_set_callback(cli_token * curTok, cli_callback_t callback)
 }
 
 /**
- * @brief Set the argument count for this token
+ * @brief Set the argument counts for this token
  *
  * @param curTok Pointer
- * @param argc int
+ * @param mandatoryArgc int
+ * @param optionalArgc int
  *
  * @return 0: ok, -1: Error
  */
-int cli_set_argc(cli_token * curTok, int argc)
+int cli_set_argc(cli_token * curTok, int mandatoryArgc, int optionalArgc)
 {
 	if (!cli_is_token_a_leaf(curTok)) {
 		DPRINTF(ERROR, "Can't set argument count for token \"%s\": token is not a leaf\n\r", curTok->text);
 		return -1;
 	}
 
-	if (argc <= 0) {
-		DPRINTF(ERROR, "Invalid argument count for token \"%s\": %d\n\r", curTok->text, argc);
+	if ((mandatoryArgc < 0) || (optionalArgc < 0)) {
+		DPRINTF(ERROR, "Invalid argument count for token \"%s\": mandatory=%d, optional=%d\n\r",
+				curTok->text, curTok->mandatoryArgc, curTok->optionalArgc);
 		return -1;
 	}
 
-	curTok->argc = argc;
+	curTok->mandatoryArgc = mandatoryArgc;
+	curTok->optionalArgc  = optionalArgc;
 	return 0;
 }
 
