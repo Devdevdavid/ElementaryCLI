@@ -17,7 +17,7 @@
 // ======================
 
 #define CLI_NAME    "ElementaryCLI"
-#define CLI_VERSION "0.1.0"
+#define CLI_VERSION "0.1.1"
 
 #define CLI_MAX_CHILDS      4
 #define CLI_MAX_TEXT_LEN    10
