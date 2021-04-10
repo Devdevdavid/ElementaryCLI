@@ -199,7 +199,7 @@ static int cli_get_children_count(cli_token * parent)
  * @param cmdText Array of char pointer : [0] -> "word1\0", [1] -> "word2\0",
  * etc.
  *
- * @return Number of cmdText found (Ex: 3), -1: Error
+ * @return Number of cmdText found (Ex: 3)
  */
 static int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 {
@@ -226,8 +226,10 @@ static int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 			++pCmd;
 
 			// A new cmdText begins only if next character is not a space
-			// This allow user to put multiple spaces between cmdText
-			if ((*pCmd) != ' ') {
+			// and to an ending line
+			// This allow user to put multiple spaces between cmdText and extra space
+			// at the end of the line
+			if (((*pCmd) != ' ') && (*pCmd) != '\0') {
 				++cmdTextCount;
 				cmdText[cmdTextCount] = pCmd;
 
@@ -316,49 +318,61 @@ static char * cli_autocomplete(char * cmdText[], int cmdTextCount)
 	cli_token * lastAlternativeTok = NULL;
 	int         lastCmdTextLen;
 	char *      lastCmdText;
-	int         alternatives = 0;
+	int         alternatives   = 0;
+	char        emptyString[1] = "";
 
 	// FIND TOKENS
-	// if it failed, propose alternatives
-	if (cli_find_last_valid_token(cmdText, cmdTextCount, &curTok) != 0) {
-		// Shortcuts
+	// If all cmdText are recognized, there is no alternatives to give
+	// If depth == 0, the last recognized is root, we must propose alternatives
+	if (cli_find_last_valid_token(cmdText, cmdTextCount, &curTok) > 0) {
+		return NULL; // No alternatives
+	}
+
+	// Shortcuts
+	if (cmdTextCount == 0) {
+		// Here, user tries to autocomplete an empty string
+		// we gonna print all root child
+		lastCmdText    = emptyString;
+		lastCmdTextLen = 0;
+	} else {
 		lastCmdText    = cmdText[cmdTextCount - 1];
 		lastCmdTextLen = strlen(lastCmdText);
+	}
 
-		// Do this in 2 states:
-		// 1. Count alternatives
-		// 2. Print them if more than 1
-		for (int state = 0; state < 2; ++state) {
-			// For all childs of the last valid token found...
-			for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
-				if (curTok->childs[i] == NULL) {
-					continue;
-				}
-				// Does the last text match this child ?
-				if (strncmp(lastCmdText, curTok->childs[i]->text, lastCmdTextLen) ==
-					0) {
-					if (state == 0) {
-						++alternatives;
-						lastAlternativeTok = curTok->childs[i];
-					} else if (state == 1) {
-						printf("%s\t%s\n\r", curTok->childs[i]->text,
-							   curTok->childs[i]->desc);
-					}
-				}
-			}
-
-			if (alternatives == 0) {
-				break; // Nothing to do
-			} else if (alternatives == 1) {
-				return lastAlternativeTok->text;
-			} else {
-				printf("\n\r"); // Go to next line before printing alternatives
+	// Do this in 2 states:
+	// 1. Count alternatives
+	// 2. Print them if more than 1
+	for (int state = 0; state < 2; ++state) {
+		// For all childs of the last valid token found...
+		for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
+			if (curTok->childs[i] == NULL) {
 				continue;
 			}
+			// Does the last text match this child ?
+			if (strncmp(lastCmdText, curTok->childs[i]->text, lastCmdTextLen) == 0) {
+				if (state == 0) {
+					++alternatives;
+					lastAlternativeTok = curTok->childs[i];
+				} else if (state == 1) {
+					cli_print_token(curTok->childs[i]);
+				}
+			}
+		}
+
+		// Execute this block only when state == 0
+		if (state > 0) {
+			continue;
+		} else if (alternatives == 0) {
+			break; // Nothing to do
+		} else if (alternatives == 1) {
+			return lastAlternativeTok->text;
+		} else {
+			printf("\n\r"); // Go to next line before printing alternatives
+			continue;
 		}
 	}
 
-	return NULL;
+	return NULL; // No alternatives
 }
 
 // ===================
@@ -548,11 +562,8 @@ int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBuff
 	// Copy incomming buffer
 	cli_strcpy_safe(cmdEdit, str, CLI_CMD_MAX_LEN);
 
-	// PARSER
+	// PARSER (Note: cmdTextCount can be 0)
 	cmdTextCount = cli_parse_cmd_text(cmdEdit, cmdText);
-	if (cmdTextCount <= 0) {
-		return 0;
-	}
 
 	// Search for alternatives
 	char * pText = cli_autocomplete(cmdText, cmdTextCount);
@@ -560,8 +571,8 @@ int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBuff
 		return 0; // Nothing added
 	}
 
-	countAlreadyWrote = strlen(cmdText[cmdTextCount - 1]);
-	countToAdd        = strlen(pText) - countAlreadyWrote;
+	countAlreadyWrote = strlen(cmdText[cmdTextCount - 1]); // size of what user wrote (Ex: 4 -> "conf" for "config")
+	countToAdd        = strlen(pText) - countAlreadyWrote; // size we have to write (Ex: 2 -> "ig" for "conf")
 
 	// Check overflow
 	if (countToAdd > outBufferMaxLen) {
@@ -569,7 +580,16 @@ int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBuff
 		return 0;
 	}
 
+	// Append the text to add and update max len
 	cli_strcpy_safe(outBuffer, pText + countAlreadyWrote, outBufferMaxLen);
+	outBufferMaxLen -= countToAdd;
+
+	// Append an extra space (" ") if there is enough memory
+	if (outBufferMaxLen >= 1) {
+		cli_strcpy_safe(outBuffer + countToAdd, " ", outBufferMaxLen);
+		countToAdd += 1;
+	}
+
 	return countToAdd;
 }
 
