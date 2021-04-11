@@ -54,7 +54,7 @@ A leaf can live without any argument (Ex: `show_config`). But some commands requ
 There is 2 types of arguments:
 
     - Madatory (Noted `<arg>`)
-    - Optional (Noted `[arg]`) (No yet supported)
+    - Optional (Noted `[arg]`)
 
 Arguments are passed to callback as an array of `char *`. ElementaryCLI does not manage argument type (integer, boolean, strings, ...). It is up to the callback to parse the data.
 
