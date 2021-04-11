@@ -1,7 +1,7 @@
-#include "lineBuffer.h"
+#include "line_buffer.h"
 
 #define LINE_BUFFER_C
-#include "debug.h"
+#include "cli_debug.h"
 
 // Global variables
 typedef struct {

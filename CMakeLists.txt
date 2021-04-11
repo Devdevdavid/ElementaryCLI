@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(ElementaryCLI)
 
-add_library(ElementaryCLI src/cli.c src/lineBuffer.c)
+add_library(ElementaryCLI src/cli.c src/line_buffer.c)
 target_include_directories (ElementaryCLI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(demo exemple/demo_ncurses.c)

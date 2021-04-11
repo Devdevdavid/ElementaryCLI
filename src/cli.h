@@ -11,8 +11,7 @@
 #include <string.h>
 
 #include "cli_config.h"
-
-#include "lineBuffer.h"
+#include "line_buffer.h"
 
 // ======================
 // Constants

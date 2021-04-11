@@ -1,5 +1,5 @@
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef CLI_DEBUG_H
+#define CLI_DEBUG_H
 
 #ifdef CLI_C
 // Variable declaration
@@ -50,4 +50,4 @@ int debugLineBuffer = 0;
 
 #endif /* DEBUG */
 
-#endif /* DEBUG_H */
+#endif /* CLI_DEBUG_H */

@@ -1,7 +1,7 @@
 #include "cli.h"
 
 #define CLI_C
-#include "debug.h"
+#include "cli_debug.h"
 
 // Global variables
 const char cliVersionName[] = CLI_NAME " - v" CLI_VERSION;
