@@ -4,8 +4,8 @@
 #include "debug.h"
 
 // Global variables
-const char * cliVersionName = CLI_NAME " - v" CLI_VERSION;
-cli_token    tokenList[CLI_MAX_TOKEN_COUNT];
+const char cliVersionName[] = CLI_NAME " - v" CLI_VERSION;
+cli_token  tokenList[CLI_MAX_TOKEN_COUNT];
 
 // ===================
 //      TOOLS
@@ -205,6 +205,7 @@ static uint8_t cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 
 	DPRINTF(PARSER, "- Entering\n\r");
 
+	// Check empty strings
 	if ((*pCmd) == '\0') {
 		DPRINTF(PARSER, "- Nothing to parse\n\r");
 		return 0; // Empty string

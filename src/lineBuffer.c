@@ -12,7 +12,7 @@ typedef struct {
 	char *  curLineBuffer;  /**< The line currently under edition by user */
 	uint8_t lineSize;       /**< Size of the line (without ending '\0') */
 	char *  pCurPos;        /**< Current position of the cursor */
-	uint8_t escPos;         /**< Current position in the escBuffer */
+	uint8_t escPos : 2;     /**< Current position in the ainsi escaped sequence [0;2] */
 	uint8_t isEscaping : 1; /**< Tell if next bytes will be managed as escaped command */
 	uint8_t isExiting : 1;  /**< Tell if module is in exiting mode */
 
