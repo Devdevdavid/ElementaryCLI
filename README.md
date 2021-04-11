@@ -115,3 +115,24 @@ This code gives the following tree:
  \ set_config   
     \ ip        // Call set_ip_adress_callback(1, <address>)
 ```
+
+## Debug
+
+The code in `debug.h` is removed from application if the flag `DEBUG` is not defined at compilation time.
+Add `-D DEBUG` to compiler command to include debuging code.
+
+You can enable/disable debug messages for a specified function by using the following macros:
+```C
+int cli_init(void)
+{
+    // [...]
+    DEBUG_ENABLE(ERROR);
+    DEBUG_ENABLE(PARSER);
+    DEBUG_ENABLE(FINDER);
+    DEBUG_DISABLE(AUTOC);
+    // [...]
+}
+```
+
+By default, all messages are disabled.
+
