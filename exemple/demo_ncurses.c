@@ -137,5 +137,7 @@ int main(void)
 		cli_rx(byte);
 	}
 
+	endwin(); // Restore terminal to previous state
+
 	return 0;
 }
