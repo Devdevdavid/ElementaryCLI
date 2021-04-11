@@ -7,8 +7,8 @@
 typedef struct {
 	char lineBufferTable[LB_HISTORY_COUNT][LB_LINE_BUFFER_LENGTH]; /**< Buffer to store the state of the line */
 
-	int     historyIndex;   /**< The current lineBuffer index under edition, history will be saved here after processing */
-	int     explorerIndex;  /**< Index controlled by user when explorating history */
+	uint8_t historyIndex;   /**< The current lineBuffer index under edition, history will be saved here after processing */
+	uint8_t explorerIndex;  /**< Index controlled by user when explorating history */
 	char *  curLineBuffer;  /**< The line currently under edition by user */
 	uint8_t lineSize;       /**< Size of the line (without ending '\0') */
 	char *  pCurPos;        /**< Current position of the cursor */
@@ -34,7 +34,7 @@ lb_handle_t lbHandle;
  * @param maxRange The maximum value
  * @return The updated index
  */
-static int lb_loop_index_operation(int index, int add, int maxRange)
+static uint8_t lb_loop_index_operation(uint8_t index, int8_t add, int maxRange)
 {
 	index += add;
 	if (index < 0) {
@@ -222,9 +222,9 @@ static void lb_handle_escaped(uint8_t byte)
  */
 static int lb_cmp_curline_prevline()
 {
-	char * prevLine;
-	char * curLine;
-	int    index;
+	char *  prevLine;
+	char *  curLine;
+	uint8_t index;
 
 	index = lb_loop_index_operation(lbHandle.historyIndex, -1, LB_HISTORY_COUNT);
 
@@ -271,8 +271,9 @@ static int lb_get_cursor_pos(void)
  */
 static void lb_auto_complete(void)
 {
-	int    remainLen, count;
-	char * appendBuffer;
+	uint16_t remainLen;
+	uint8_t  count;
+	char *   appendBuffer;
 
 	if (lbHandle.autoCompCallback == NULL) {
 		return;

@@ -31,7 +31,7 @@ void sigint_handler(int dummy)
  *
  * @return 0
  */
-int cli_cb_exit(int argc, char * argv[])
+int cli_cb_exit(uint8_t argc, char * argv[])
 {
 	sigint_handler(SIGINT);
 	return 0;
@@ -45,10 +45,10 @@ int cli_cb_exit(int argc, char * argv[])
  *
  * @return The status of the function
  */
-int print_args(int argc, char * argv[])
+int print_args(uint8_t argc, char * argv[])
 {
 	printf("print_args() Found %d args:\n\r", argc);
-	for (int i = 0; i < argc; ++i) {
+	for (uint8_t i = 0; i < argc; ++i) {
 		printf("\t%s\n\r", argv[i]);
 	}
 	return 0;

@@ -32,8 +32,8 @@
 // Typedefs and structs
 // ======================
 
-typedef int (*lb_line_callback_t)(const char * str, int len);
-typedef int (*lb_autocomplete_callback_t)(const char * str, int len, char * outBuffer, int outBufferMaxLen);
+typedef int (*lb_line_callback_t)(const char * str, uint16_t len);
+typedef uint8_t (*lb_autocomplete_callback_t)(const char * str, uint16_t len, char * outBuffer, uint16_t outBufferMaxLen);
 
 // ======================
 // Protoypes

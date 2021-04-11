@@ -17,10 +17,10 @@ cli_token    tokenList[CLI_MAX_TOKEN_COUNT];
  * @param cmdText Array of pointer
  * @param count Number of element into the array
  */
-static void cli_print_cmd_text(char * cmdText[], int count)
+static void cli_print_cmd_text(char * cmdText[], uint8_t count)
 {
 	DPRINTF(INFO, "Cmd text found (%d):\n\r", count);
-	for (int i = 0; i < count; ++i) {
+	for (uint8_t i = 0; i < count; ++i) {
 		CLI_PRINTF("\t%s\n\r", cmdText[i]);
 	}
 }
@@ -33,23 +33,24 @@ static void cli_print_cmd_text(char * cmdText[], int count)
  */
 static void cli_print_token_tree(cli_token * curTok)
 {
-	static int indent = 0;
+	static uint8_t indent = 0;
+	uint8_t        i;
 
 	// Print indent
-	for (int i = 0; i < indent; ++i) {
+	for (i = 0; i < indent; ++i) {
 		CLI_PRINTF(" | ");
 	}
 	++indent;
 
 	// Print text and description with alignement
 	CLI_PRINTF("%s", curTok->text);
-	for (int i = 0; i < (30 - 3 * indent - strlen(curTok->text)); ++i) {
+	for (i = 0; i < (30 - 3 * indent - strlen(curTok->text)); ++i) {
 		CLI_PRINTF(" ");
 	}
 	CLI_PRINTF("%s\n\r", curTok->desc);
 
 	// Recursive call for all childs
-	for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
+	for (i = 0; i < CLI_MAX_CHILDS; ++i) {
 		if (curTok->childs[i] == NULL) {
 			continue;
 		}
@@ -105,7 +106,7 @@ static void cli_usage(cli_token * curTok)
 		cli_print_token(curTok);
 	} else {
 		// Print all child descriptions
-		for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
+		for (uint8_t i = 0; i < CLI_MAX_CHILDS; ++i) {
 			if (curTok->childs[i] == NULL) {
 				continue;
 			}
@@ -123,7 +124,7 @@ static void cli_usage(cli_token * curTok)
  * @param curTok Returned pointer
  * @return depth abs(depth): Number of valid tokens, <0: token abs(depth) + 1 is not valid
  */
-static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_token ** curTok)
+static int cli_find_last_valid_token(char * cmdText[], uint8_t cmdTextCount, cli_token ** curTok)
 {
 	int depth = 0;
 
@@ -132,8 +133,8 @@ static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_tok
 	// Begin at root
 	(*curTok) = cli_get_root_token();
 
-	for (int i = 0; i < cmdTextCount; ++i) {
-		int childIndex;
+	for (uint8_t i = 0; i < cmdTextCount; ++i) {
+		uint8_t childIndex;
 
 		// Search text into tokens
 		for (childIndex = 0; childIndex < CLI_MAX_CHILDS; ++childIndex) {
@@ -147,7 +148,7 @@ static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_tok
 				// Found it !
 				(*curTok) = (*curTok)->childs[childIndex];
 				++depth;
-				DPRINTF(FINDER, "Identified child %s (%d)\n\r", (*curTok)->text, childIndex);
+				DPRINTF(FINDER, "Identified child %s (%u)\n\r", (*curTok)->text, childIndex);
 				break;
 			}
 		}
@@ -176,9 +177,9 @@ static int cli_find_last_valid_token(char * cmdText[], int cmdTextCount, cli_tok
  * @param parent Pointer
  * @return Number of children [0; CLI_MAX_CHILDS]
  */
-static int cli_get_children_count(cli_token * parent)
+static uint8_t cli_get_children_count(cli_token * parent)
 {
-	int count = 0;
+	uint8_t count = 0;
 
 	for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
 		if (parent->childs[i] != NULL) {
@@ -197,10 +198,10 @@ static int cli_get_children_count(cli_token * parent)
  *
  * @return Number of cmdText found (Ex: 3)
  */
-static int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
+static uint8_t cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 {
-	int    cmdTextCount = 0;
-	char * pCmd         = cmdEdit;
+	uint8_t cmdTextCount = 0;
+	char *  pCmd         = cmdEdit;
 
 	DPRINTF(PARSER, "- Entering\n\r");
 
@@ -262,7 +263,7 @@ static int cli_execute(char * cmdText[], int cmdTextCount)
 	cli_token * curTok = cli_get_root_token();
 	int         depth;
 	char **     argv = NULL;
-	int         argc; // Number of argument given by user
+	uint8_t     argc; // Number of argument given by user
 
 	// FIND TOKENS
 	depth = cli_find_last_valid_token(cmdText, cmdTextCount, &curTok);
@@ -317,19 +318,18 @@ retFailed:
 /**
  * @brief Auto-complete a command or propose choice
  *
- * @param cmdText Array of char pointer : [0] -> "word1\0", [1] -> "word2\0",
- * etc.
+ * @param cmdText Array of char pointer : [0] -> "word1\0", [1] -> "word2\0", etc.
  * @param cmdTextCount Number of element in cmdText
  * @return NULL: Either no alternative or more than one, >0: A pointer to the
  * only alternative possible
  */
-static char * cli_autocomplete(char * cmdText[], int cmdTextCount)
+static char * cli_autocomplete(char * cmdText[], uint8_t cmdTextCount)
 {
 	cli_token * curTok             = cli_get_root_token();
 	cli_token * lastAlternativeTok = NULL;
-	int         lastCmdTextLen;
+	uint8_t     lastCmdTextLen;
 	char *      lastCmdText;
-	int         alternatives   = 0;
+	uint8_t     alternatives   = 0;
 	char        emptyString[1] = "";
 	int         depth;
 
@@ -434,7 +434,7 @@ int cli_init(void)
  * @param src Pointer
  * @param maxLen Max length of dest
  */
-void cli_strcpy_safe(char * dest, const char * src, int maxLen)
+void cli_strcpy_safe(char * dest, const char * src, uint16_t maxLen)
 {
 	strncpy(dest, src, maxLen);
 	dest[maxLen - 1] = '\0';
@@ -470,7 +470,7 @@ cli_token * cli_add_token(const char * text, const char * desc)
 
 	// Check overflow
 	if (curTok == NULL) {
-		DPRINTF(ERROR, "Unable to add token \"%s\", maximum reach: %d\n\r", curTok->text, CLI_MAX_TOKEN_COUNT);
+		DPRINTF(ERROR, "Unable to add token \"%s\", maximum reach: %u\n\r", curTok->text, CLI_MAX_TOKEN_COUNT);
 		return NULL;
 	}
 
@@ -493,13 +493,13 @@ cli_token * cli_add_token(const char * text, const char * desc)
  */
 int cli_add_children(cli_token * parent, cli_token * children)
 {
-	int argc = parent->mandatoryArgc + parent->optionalArgc;
+	uint8_t argc = parent->mandatoryArgc + parent->optionalArgc;
 	if (argc > 0) {
-		DPRINTF(ERROR, "Unable to add children for token \"%s\", parent has %d arguments\n\r", parent->text, argc);
+		DPRINTF(ERROR, "Unable to add children for token \"%s\", parent has %u arguments\n\r", parent->text, argc);
 		return -1;
 	}
 
-	for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
+	for (uint8_t i = 0; i < CLI_MAX_CHILDS; ++i) {
 		if (parent->childs[i] == NULL) {
 			parent->childs[i] = children;
 
@@ -535,21 +535,15 @@ int cli_set_callback(cli_token * curTok, cli_callback_t callback)
  * @brief Set the argument counts for this token
  *
  * @param curTok Pointer
- * @param mandatoryArgc int
- * @param optionalArgc int
+ * @param mandatoryArgc uint8_t
+ * @param optionalArgc uint8_t
  *
  * @return 0: ok, -1: Error
  */
-int cli_set_argc(cli_token * curTok, int mandatoryArgc, int optionalArgc)
+int cli_set_argc(cli_token * curTok, uint8_t mandatoryArgc, uint8_t optionalArgc)
 {
 	if (!cli_is_token_a_leaf(curTok)) {
 		DPRINTF(ERROR, "Can't set argument count for token \"%s\": token is not a leaf\n\r", curTok->text);
-		return -1;
-	}
-
-	if ((mandatoryArgc < 0) || (optionalArgc < 0)) {
-		DPRINTF(ERROR, "Invalid argument count for token \"%s\": mandatory=%d, optional=%d\n\r",
-				curTok->text, curTok->mandatoryArgc, curTok->optionalArgc);
 		return -1;
 	}
 
@@ -576,15 +570,16 @@ cli_token * cli_get_root_token(void)
  * @param str The input command string
  * @param len The length of the str
  * @param outBuffer The buffer where we write the completion
+ * @param outBufferMaxLen The length of outBuffer
  *
- * @return The result of the command
+ * @return Number of characters added
  */
-int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBufferMaxLen)
+uint8_t cli_autocomplete_lb(const char * str, uint16_t len, char * outBuffer, uint16_t outBufferMaxLen)
 {
-	char   cmdEdit[CLI_CMD_MAX_LEN]; // Editable copy of str
-	char * cmdText[CLI_CMD_MAX_TOKEN];
-	int    cmdTextCount;
-	int    countToAdd, countAlreadyWrote;
+	char    cmdEdit[CLI_CMD_MAX_LEN]; // Editable copy of str
+	char *  cmdText[CLI_CMD_MAX_TOKEN];
+	uint8_t cmdTextCount;
+	uint8_t countToAdd, countAlreadyWrote;
 
 	// Copy incomming buffer
 	cli_strcpy_safe(cmdEdit, str, CLI_CMD_MAX_LEN);
@@ -612,7 +607,7 @@ int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBuff
 	// Append the text to add and update max len
 	cli_strcpy_safe(outBuffer, pText + countAlreadyWrote, outBufferMaxLen);
 	outBufferMaxLen -= countToAdd;
-	DPRINTF(AUTOC, "Adding %d bytes\n\r", countToAdd);
+	DPRINTF(AUTOC, "Adding %u bytes\n\r", countToAdd);
 
 	// Append an extra space (" ") if there is enough memory
 	if (outBufferMaxLen >= 1) {
@@ -635,11 +630,11 @@ int cli_autocomplete_lb(const char * str, int len, char * outBuffer, int outBuff
  *
  * @return The result of the command
  */
-int cli_execute_lb(const char * str, int len)
+int cli_execute_lb(const char * str, uint16_t len)
 {
-	char   cmdEdit[CLI_CMD_MAX_LEN]; // Editable copy of str
-	char * cmdText[CLI_CMD_MAX_TOKEN];
-	int    cmdTextCount;
+	char    cmdEdit[CLI_CMD_MAX_LEN]; // Editable copy of str
+	char *  cmdText[CLI_CMD_MAX_TOKEN];
+	uint8_t cmdTextCount;
 
 	// Copy incomming buffer
 	cli_strcpy_safe(cmdEdit, str, CLI_CMD_MAX_LEN);
