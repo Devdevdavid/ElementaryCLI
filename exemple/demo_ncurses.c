@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include "cli.h"
-#include "lineBuffer.h"
 
 // Tell if main loop should keep running
 static volatile int keepRunning = 1;

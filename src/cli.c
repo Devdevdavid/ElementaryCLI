@@ -21,7 +21,7 @@ static void cli_print_cmd_text(char * cmdText[], int count)
 {
 	DPRINTF(INFO, "Cmd text found (%d):\n\r", count);
 	for (int i = 0; i < count; ++i) {
-		printf("\t%s\n\r", cmdText[i]);
+		CLI_PRINTF("\t%s\n\r", cmdText[i]);
 	}
 }
 
@@ -37,16 +37,16 @@ static void cli_print_token_tree(cli_token * curTok)
 
 	// Print indent
 	for (int i = 0; i < indent; ++i) {
-		printf(" | ");
+		CLI_PRINTF(" | ");
 	}
 	++indent;
 
 	// Print text and description with alignement
-	printf("%s", curTok->text);
+	CLI_PRINTF("%s", curTok->text);
 	for (int i = 0; i < (30 - 3 * indent - strlen(curTok->text)); ++i) {
-		printf(" ");
+		CLI_PRINTF(" ");
 	}
-	printf("%s\n\r", curTok->desc);
+	CLI_PRINTF("%s\n\r", curTok->desc);
 
 	// Recursive call for all childs
 	for (int i = 0; i < CLI_MAX_CHILDS; ++i) {
@@ -66,7 +66,7 @@ static void cli_print_token_tree(cli_token * curTok)
  */
 static void cli_print_token(cli_token * curTok)
 {
-	printf("\t%s\t%s\n\r", curTok->text, curTok->desc);
+	CLI_PRINTF("\t%s\t%s\n\r", curTok->text, curTok->desc);
 }
 
 // ===================
@@ -93,11 +93,11 @@ static bool cli_is_token_a_leaf(cli_token * curTok)
 static void cli_usage(cli_token * curTok)
 {
 	// Not the same header if root
-	printf("Usage");
+	CLI_PRINTF("Usage");
 	if (curTok == cli_get_root_token()) {
-		printf(":\n\r");
+		CLI_PRINTF(":\n\r");
 	} else {
-		printf(" for \"%s\":\n\r", curTok->text);
+		CLI_PRINTF(" for \"%s\":\n\r", curTok->text);
 	}
 
 	// Incase of leaf, we just print itself with its description
@@ -231,7 +231,7 @@ static int cli_parse_cmd_text(char * cmdEdit, char * cmdText[])
 
 				// Check maximum
 				if (cmdTextCount >= CLI_CMD_MAX_TOKEN) {
-					DPRINTF(ERROR, "Limit is reached (CLI_CMD_MAX_TOKEN = %d)\n\r", CLI_CMD_MAX_TOKEN);
+					CLI_PRINTF("Limit is reached (CLI_CMD_MAX_TOKEN = %d)\n\r", CLI_CMD_MAX_TOKEN);
 					return -1;
 				}
 			}
@@ -269,7 +269,7 @@ static int cli_execute(char * cmdText[], int cmdTextCount)
 	if (depth <= 0) {
 		// -depth is the index of the first not valid token
 		// (+1 to get not valid, -1: because starts at 0)
-		DPRINTF(ERROR, "Unknown command \"%s\"\n\r", cmdText[-depth]);
+		CLI_PRINTF("Unknown command \"%s\"\n\r", cmdText[-depth]);
 		goto retFailed;
 	}
 
@@ -283,12 +283,16 @@ static int cli_execute(char * cmdText[], int cmdTextCount)
 	// If there is more, they are considered as optional arguments
 	argc = cmdTextCount - depth;
 	if (argc < curTok->mandatoryArgc) {
-		DPRINTF(ERROR, "This command takes %d mandatory argument !\n\r", curTok->mandatoryArgc);
+		CLI_PRINTF("This command takes %d mandatory argument !\n\r", curTok->mandatoryArgc);
 		goto retFailed;
 	}
 
 	if (argc > (curTok->mandatoryArgc + curTok->optionalArgc)) {
-		DPRINTF(ERROR, "This command takes only %d optional argument !\n\r", curTok->optionalArgc);
+		if (curTok->optionalArgc == 0) {
+			CLI_PRINTF("This command takes no optional argument !\n\r");
+		} else {
+			CLI_PRINTF("This command takes only %d optional argument !\n\r", curTok->optionalArgc);
+		}
 		goto retFailed;
 	}
 
@@ -297,7 +301,7 @@ static int cli_execute(char * cmdText[], int cmdTextCount)
 
 	// Check null callback
 	if (curTok->callback == NULL) {
-		DPRINTF(ERROR, "No callback defined for this command !\n\r");
+		CLI_PRINTF("No callback defined for this command !\n\r");
 		return -1;
 	}
 
@@ -337,6 +341,7 @@ static char * cli_autocomplete(char * cmdText[], int cmdTextCount)
 		// There is no alternatives for leafs (We won't propose to complete arguments)
 		// So just print usage
 		if (cli_is_token_a_leaf(curTok)) {
+			CLI_PRINTF("\n\r"); // Go to next line before printing usage
 			cli_usage(curTok);
 			DPRINTF(AUTOC, "Last token is a leaf\n\r");
 			return NULL;
@@ -383,7 +388,7 @@ static char * cli_autocomplete(char * cmdText[], int cmdTextCount)
 			} else if (alternatives == 1) {
 				return lastAlternativeTok->text;
 			} else {
-				printf("\n\r"); // Go to next line before printing alternatives
+				CLI_PRINTF("\n\r"); // Go to next line before printing alternatives
 				continue;
 			}
 		}
@@ -402,7 +407,7 @@ static char * cli_autocomplete(char * cmdText[], int cmdTextCount)
  */
 int cli_init(void)
 {
-	DEBUG_ENABLE(ERROR);
+	//DEBUG_ENABLE(ERROR);
 	//DEBUG_ENABLE(PARSER);
 	//DEBUG_ENABLE(FINDER);
 	//DEBUG_ENABLE(AUTOC);

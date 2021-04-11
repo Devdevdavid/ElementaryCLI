@@ -10,12 +10,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "cli_config.h" // Also include lb config
+
 // ======================
 // Constants
 // ======================
-
-#define LB_LINE_BUFFER_LENGTH 32 /**< Number of character into the buffer */
-#define LB_HISTORY_COUNT      10 /**< Number of line in history */
 
 #define LB_KEY_BACKSPACE_1  0x08 // For serial
 #define LB_KEY_BACKSPACE_2  0x7F // For MacOS

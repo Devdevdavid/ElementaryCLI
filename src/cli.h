@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "cli_config.h"
+
 #include "lineBuffer.h"
 
 // ======================
@@ -19,13 +21,8 @@
 #define CLI_NAME    "ElementaryCLI"
 #define CLI_VERSION "0.1.1"
 
-#define CLI_MAX_CHILDS      4
-#define CLI_MAX_TEXT_LEN    10
-#define CLI_MAX_DESC_LEN    32
-#define CLI_MAX_TOKEN_COUNT 10
-#define CLI_CMD_MAX_TOKEN   5
-#define CLI_CMD_MAX_LEN     LB_LINE_BUFFER_LENGTH
-#define CLI_ROOT_TOKEN_NAME "."
+#define CLI_CMD_MAX_LEN     LB_LINE_BUFFER_LENGTH /**< Maximum length of a line */
+#define CLI_ROOT_TOKEN_NAME "."                   /**< Name of the root token */
 
 // ======================
 // Typedefs and structs

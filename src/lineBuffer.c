@@ -65,7 +65,7 @@ static void lb_insert_at_cursor(char toInsert)
 	if ((lbHandle.lineSize + 1) >= LB_LINE_BUFFER_LENGTH) {
 		DEBUG_BLOC(ERROR)
 		{
-			printf("\n\r");
+			CLI_PRINTF("\n\r");
 			DPRINTF(ERROR, "Line buffer is full ! (LB_LINE_BUFFER_LENGTH = %d)\n\r", LB_LINE_BUFFER_LENGTH);
 		}
 		return;
@@ -305,7 +305,7 @@ static void lb_process_line(void)
 {
 	// Keep the actual display on line n
 	// and move to n+1 to display command's results
-	printf("\n\r");
+	CLI_PRINTF("\n\r");
 
 	// Execute the command
 	if (lbHandle.lineCallback != NULL) {
@@ -327,12 +327,12 @@ static void lb_term_update(void)
 	}
 
 	// [%dD set cursor pos
-	printf("\x1B[1000D" // Set cursor to begin line
-		   "\x1B[K"     // Kill line
-		   "> %s"       // Print prompt and line
-		   "\x1B[1000D" // Set cursor to begin line
-		   "\x1B[%dC",  // Set cursor to actual position
-		   lbHandle.curLineBuffer, 2 + lb_get_cursor_pos());
+	CLI_PRINTF("\x1B[1000D" // Set cursor to begin line
+			   "\x1B[K"     // Kill line
+			   "> %s"       // Print prompt and line
+			   "\x1B[1000D" // Set cursor to begin line
+			   "\x1B[%dC",  // Set cursor to actual position
+			   lbHandle.curLineBuffer, 2 + lb_get_cursor_pos());
 }
 
 // ===================
@@ -344,8 +344,8 @@ static void lb_term_update(void)
  */
 void lb_init(void)
 {
-	DEBUG_ENABLE(ERROR);
-	DEBUG_ENABLE(INFO);
+	//DEBUG_ENABLE(ERROR);
+	//DEBUG_ENABLE(INFO);
 
 	// Init handle
 	memset(&lbHandle, 0, sizeof(lbHandle));
