@@ -60,8 +60,8 @@ int print_args(uint8_t argc, char * argv[])
 static int create_cli_commands(void)
 {
 	cli_token * tokRoot = cli_get_root_token();
-	cli_token * tokLan;
-	cli_token * tokIpSet;
+	cli_token * tokLvl1;
+	cli_token * tokLvl2;
 	cli_token * curTok;
 
 	// Create commands
@@ -69,39 +69,41 @@ static int create_cli_commands(void)
 	cli_set_callback(curTok, &cli_cb_exit);
 	cli_add_children(tokRoot, curTok);
 
-	tokLan = cli_add_token("lan", "LAN configuration");
+	tokLvl1 = cli_add_token("flash", "Manage flash memory");
+	{
+		curTok = cli_add_token("default", "Reset flash setting to default");
+		cli_set_callback(curTok, &print_args);
+		cli_add_children(tokLvl1, curTok);
+	}
+	cli_add_children(tokRoot, tokLvl1);
+
+	tokLvl1 = cli_add_token("lan", "LAN configuration");
 	{
 		curTok = cli_add_token("show", "[interface] Show configuration");
 		cli_set_callback(curTok, &print_args);
 		cli_set_argc(curTok, 0, 1);
-		cli_add_children(tokLan, curTok);
+		cli_add_children(tokLvl1, curTok);
 
-		tokIpSet = cli_add_token("set", "Define new configuration");
+		tokLvl2 = cli_add_token("set", "Define new configuration");
 		{
 			curTok = cli_add_token("ip", "<address> Set IP adress");
 			cli_set_callback(curTok, &print_args);
 			cli_set_argc(curTok, 1, 0);
-			cli_add_children(tokIpSet, curTok);
+			cli_add_children(tokLvl2, curTok);
 
 			curTok = cli_add_token("gateway", "<address> Set gateway adress");
 			cli_set_callback(curTok, &print_args);
 			cli_set_argc(curTok, 1, 0);
-			cli_add_children(tokIpSet, curTok);
+			cli_add_children(tokLvl2, curTok);
 
 			curTok = cli_add_token("mask", "<address> Set network mask");
 			cli_set_callback(curTok, &print_args);
 			cli_set_argc(curTok, 1, 0);
-			cli_add_children(tokIpSet, curTok);
-
-			curTok =
-			cli_add_token("proxy", "<address> <port> Set the proxy location");
-			cli_set_callback(curTok, &print_args);
-			cli_set_argc(curTok, 2, 0);
-			cli_add_children(tokIpSet, curTok);
+			cli_add_children(tokLvl2, curTok);
 		}
-		cli_add_children(tokLan, tokIpSet);
+		cli_add_children(tokLvl1, tokLvl2);
 	}
-	cli_add_children(tokRoot, tokLan);
+	cli_add_children(tokRoot, tokLvl1);
 	return 0;
 }
 

@@ -322,7 +322,7 @@ retFailed:
  * @param cmdText Array of char pointer : [0] -> "word1\0", [1] -> "word2\0", etc.
  * @param cmdTextCount Number of element in cmdText
  * @return NULL: Either no alternative or more than one, >0: A pointer to the
- * only alternative possible
+ * only alternative possible (only the portion to write)
  */
 static char * cli_autocomplete(char * cmdText[], uint8_t cmdTextCount)
 {
@@ -387,7 +387,8 @@ static char * cli_autocomplete(char * cmdText[], uint8_t cmdTextCount)
 			if (alternatives == 0) {
 				break; // Nothing to do, don't bother with state 1
 			} else if (alternatives == 1) {
-				return lastAlternativeTok->text;
+				// Return the pointer of the portion to write
+				return lastAlternativeTok->text + lastCmdTextLen;
 			} else {
 				CLI_PRINTF("\n\r"); // Go to next line before printing alternatives
 				continue;
@@ -408,7 +409,7 @@ static char * cli_autocomplete(char * cmdText[], uint8_t cmdTextCount)
  */
 int cli_init(void)
 {
-	//DEBUG_ENABLE(ERROR);
+	DEBUG_ENABLE(ERROR);
 	//DEBUG_ENABLE(PARSER);
 	//DEBUG_ENABLE(FINDER);
 	//DEBUG_ENABLE(AUTOC);
@@ -594,9 +595,9 @@ uint8_t cli_autocomplete_lb(const char * str, uint16_t len, char * outBuffer, ui
 		DPRINTF(AUTOC, "No unique alternative found\n\r");
 		return 0; // Nothing added
 	}
+	DPRINTF(AUTOC, "Found 1 alternative: %s\n\r", pText);
 
-	countAlreadyWrote = strlen(cmdText[cmdTextCount - 1]); // size of what user wrote (Ex: 4 -> "conf" for "config")
-	countToAdd        = strlen(pText) - countAlreadyWrote; // size we have to write (Ex: 2 -> "ig" for "conf")
+	countToAdd = strlen(pText); // size we have to write (Ex: 2 -> "ig" for "conf")
 
 	// Check overflow
 	if (countToAdd > outBufferMaxLen) {
@@ -606,7 +607,7 @@ uint8_t cli_autocomplete_lb(const char * str, uint16_t len, char * outBuffer, ui
 	}
 
 	// Append the text to add and update max len
-	cli_strcpy_safe(outBuffer, pText + countAlreadyWrote, outBufferMaxLen);
+	cli_strcpy_safe(outBuffer, pText, outBufferMaxLen);
 	outBufferMaxLen -= countToAdd;
 	DPRINTF(AUTOC, "Adding %u bytes\n\r", countToAdd);
 

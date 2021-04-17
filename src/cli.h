@@ -18,7 +18,7 @@
 // ======================
 
 #define CLI_NAME    "ElementaryCLI"
-#define CLI_VERSION "0.1.3"
+#define CLI_VERSION "0.1.4"
 
 #define CLI_CMD_MAX_LEN     LB_LINE_BUFFER_LENGTH /**< Maximum length of a line */
 #define CLI_ROOT_TOKEN_NAME "."                   /**< Name of the root token */
